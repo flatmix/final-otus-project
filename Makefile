@@ -1,0 +1,3 @@
+format:
+	golangci-lint cache clean
+	golangci-lint run --fix ./...
