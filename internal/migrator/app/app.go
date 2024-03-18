@@ -2,34 +2,39 @@ package app
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
-	"github.com/flatmix/final-otus-project/internal/migrator/usecase"
 	"log/slog"
 	"os"
+
+	"github.com/flatmix/final-otus-project/internal/migrator/config"
+	"github.com/flatmix/final-otus-project/internal/migrator/storage"
+	"github.com/flatmix/final-otus-project/internal/migrator/usecase"
 )
 
-var url, name string
+const FolderName = "migrations"
 
-func Start(mainCtx context.Context, logger *slog.Logger) error {
+var ErrorNoCommand = errors.New("set command first arguments: {up, create, down, redo, status}")
+
+func Start(mainCtx context.Context, logger *slog.Logger) {
 	ctx, cancel := context.WithCancel(mainCtx)
 	defer cancel()
-	defer ctx.Done()
 
-	fs := flag.NewFlagSet("ExampleFunc", flag.ContinueOnError)
-	fs.SetOutput(os.Stdout)
-	fs.StringVar(&url, "url", "", "The url connect to db")
-	fs.StringVar(&name, "name", "", "The name of migration")
-	argsWithProg := os.Args
-	if len(argsWithProg) < 2 {
-		fmt.Println("Set command first arguments: {up, create, down, redo, status}")
-		return nil
-	}
-	err := fs.Parse(argsWithProg[2:]) //nolint:errcheck
+	var name string
 
+	var postgresConfig config.Postgres
+	var configuration config.Config
+
+	argsWithProg, err := setConfig(&name, &postgresConfig, &configuration)
 	if err != nil {
 		logger.Error("Parse command line", "Error", err)
-		return err
+		return
+	}
+
+	db, err := storage.NewDB(postgresConfig)
+	if err != nil {
+		logger.Error("Connect to DB", "Error", fmt.Errorf("NewDB: %w", err))
 	}
 
 	switch argsWithProg[1] {
@@ -39,25 +44,98 @@ func Start(mainCtx context.Context, logger *slog.Logger) error {
 		}
 		if name == "" {
 			fmt.Println("Set name for create command: {--name=... or second arguments}")
-			return nil
 		}
 		err = usecase.Create(name)
 		if err != nil {
 			logger.Error("Create error", "Error", err)
+			return
 		}
 	case "up":
-		fmt.Println("up")
+		outs, err := usecase.Up(ctx, db)
+		if err != nil {
+			logger.Error("Up error", "Error", err)
+			return
+		}
+		err = usecase.TerminalUpOut(outs)
+		if err != nil {
+			logger.Error("TerminalUpOut", "Error", err)
+			return
+		}
+
+		fmt.Println("up success!")
 
 	case "down":
-		fmt.Println("down")
+		outs, err := usecase.Down(ctx, db, configuration.All, configuration.Step)
+		if err != nil {
+			logger.Error("Down error", "Error", err)
+			return
+		}
+
+		err = usecase.TerminalUpOut(outs)
+		if err != nil {
+			logger.Error("TerminalUpOut", "Error", err)
+			return
+		}
+
+		fmt.Println("down success!")
 
 	case "redo":
-		fmt.Println("redo")
+		outs, err := usecase.Redo(ctx, db, configuration.All, configuration.Step)
+		if err != nil {
+			logger.Error("Redo error", "Error", err)
+			return
+		}
+
+		err = usecase.TerminalUpOut(outs)
+		if err != nil {
+			logger.Error("TerminalUpOut", "Error", err)
+			return
+		}
+
+		fmt.Println("redo success!")
 
 	case "status":
-		fmt.Println("status")
-
+		statuses, err := usecase.Status(ctx, postgresConfig)
+		if err != nil {
+			logger.Error("Redo error", "Error", err)
+			return
+		}
+		err = usecase.TerminalStatusOut(statuses)
+		if err != nil {
+			logger.Error("TerminalStatusOut", "Error", err)
+		}
+	case "dbversion":
+		dbver, err := usecase.DBVersion(ctx, postgresConfig)
+		if err != nil {
+			logger.Error("Redo error", "Error", err)
+			return
+		}
+		fmt.Printf("DB Version: %d \n", *dbver)
+	default:
+		fmt.Println("Set command first arguments: {up, create, down, redo, status}")
 	}
+}
 
-	return nil
+func setConfig(name *string, postgresConfig *config.Postgres, configuration *config.Config) ([]string, error) {
+	fs := flag.NewFlagSet("ExampleFunc", flag.ContinueOnError)
+	fs.SetOutput(os.Stdout)
+	fs.StringVar(&postgresConfig.DSN, "dbDSN", "", "The url for connect to db")
+	fs.StringVar(&postgresConfig.Username, "user", "", "User for connect to db")
+	fs.StringVar(&postgresConfig.Password, "pass", "", "Password for connect to db")
+	fs.StringVar(&postgresConfig.Host, "host", "localhost", "Host for connect to db, default `localhost`")
+	fs.StringVar(&postgresConfig.Database, "db", "postgres", "Database for connect to db, default `postgres`")
+	fs.IntVar(&postgresConfig.Port, "port", 5432, "Port for connect to db, default `5432`")
+	fs.BoolVar(&postgresConfig.SslMode, "sslMode", false, "Enable sslmode for connect to db, default `false`")
+	fs.BoolVar(&configuration.All, "all", false, "All migration: {down, redo}, default `false`")
+	fs.StringVar(name, "name", "", "The name of migration")
+	fs.IntVar(&configuration.Step, "step", 0, "Step down and redo on version, works for: {down, redo}, default `0`")
+	argsWithProg := os.Args
+	if len(argsWithProg) < 2 {
+		return []string{}, ErrorNoCommand
+	}
+	err := fs.Parse(argsWithProg[2:]) //nolint:errcheck
+	if err != nil {
+		return []string{}, err
+	}
+	return argsWithProg, nil
 }

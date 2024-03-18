@@ -1,0 +1,33 @@
+version: '3.5'
+
+services:
+  app:
+    build:
+      context: ../
+      dockerfile: docker/go/Dockerfile
+    volumes:
+      - ../:/go/src/migrator
+    networks:
+      - migrator
+    env_file:
+      - .env.local
+    entrypoint: "tail -f /dev/null"
+    depends_on:
+      pg_db:
+        condition: service_healthy
+
+  pg_db:
+    build: ./pg_db
+    healthcheck:
+      test: [ "CMD-SHELL", "psql -U postgres -d postgres -c 'select 1' | grep 1  || exit 1" ]
+      interval: 30s
+      retries: 6
+      timeout: 5s
+    ports:
+      - "5432:5432"
+    networks:
+      - migrator
+
+networks:
+  migrator:
+    driver: bridge
