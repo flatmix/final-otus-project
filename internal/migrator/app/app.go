@@ -17,6 +17,7 @@ const FolderName = "migrations"
 
 var ErrorNoCommand = errors.New("set command first arguments: {up, create, down, redo, status}")
 
+//nolint:gocognit //a lot of error checks
 func Start(mainCtx context.Context, logger *slog.Logger) {
 	ctx, cancel := context.WithCancel(mainCtx)
 	defer cancel()
@@ -32,9 +33,9 @@ func Start(mainCtx context.Context, logger *slog.Logger) {
 		return
 	}
 
-	db, err := storage.NewDB(postgresConfig)
-	if err != nil {
-		logger.Error("Connect to DB", "Error", fmt.Errorf("NewDB: %w", err))
+	db, dbErr := storage.NewDB(postgresConfig)
+	if dbErr != nil {
+		logger.Error("Connect to DB", "Error", fmt.Errorf("NewDB: %w", dbErr))
 	}
 
 	switch argsWithProg[1] {
@@ -51,6 +52,9 @@ func Start(mainCtx context.Context, logger *slog.Logger) {
 			return
 		}
 	case "up":
+		if dbErr != nil {
+			return
+		}
 		outs, err := usecase.Up(ctx, db)
 		if err != nil {
 			logger.Error("Up error", "Error", err)
@@ -65,6 +69,9 @@ func Start(mainCtx context.Context, logger *slog.Logger) {
 		fmt.Println("up success!")
 
 	case "down":
+		if dbErr != nil {
+			return
+		}
 		outs, err := usecase.Down(ctx, db, configuration.All, configuration.Step)
 		if err != nil {
 			logger.Error("Down error", "Error", err)
@@ -80,6 +87,9 @@ func Start(mainCtx context.Context, logger *slog.Logger) {
 		fmt.Println("down success!")
 
 	case "redo":
+		if dbErr != nil {
+			return
+		}
 		outs, err := usecase.Redo(ctx, db, configuration.All, configuration.Step)
 		if err != nil {
 			logger.Error("Redo error", "Error", err)
@@ -95,6 +105,9 @@ func Start(mainCtx context.Context, logger *slog.Logger) {
 		fmt.Println("redo success!")
 
 	case "status":
+		if dbErr != nil {
+			return
+		}
 		statuses, err := usecase.Status(ctx, postgresConfig)
 		if err != nil {
 			logger.Error("Redo error", "Error", err)
@@ -105,6 +118,9 @@ func Start(mainCtx context.Context, logger *slog.Logger) {
 			logger.Error("TerminalStatusOut", "Error", err)
 		}
 	case "dbversion":
+		if dbErr != nil {
+			return
+		}
 		dbver, err := usecase.DBVersion(ctx, postgresConfig)
 		if err != nil {
 			logger.Error("Redo error", "Error", err)

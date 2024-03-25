@@ -37,12 +37,12 @@
 
 >### Set db config examples
 >```bash
->migrator up --user="user" --pass="password" --db="database" --host="localhost" --port=5432 --sslMode=true
+>migrator up --user="user" --pass="password" --db="database" --host="localhost" --port=5432 --sslMode=false
 >```
 >```bash
 >migrator up --dbDSN="postgres://user:password@localhost:5432/database?sslmode=disable"
 >```
 >```bash
->export MIGRATOR_DB_DSN=postgres://postgres:password@localhost:5432/postgres?sslmode=disable
+>export MIGRATOR_DB_DSN=postgres://user:password@localhost:5432/database?sslmode=disable
 >migrator up
 >```
