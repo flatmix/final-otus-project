@@ -28,7 +28,6 @@ func Status(ctx context.Context, dbConf config.Postgres) (*Outs, error) {
 	for _, file := range files {
 		migrationDB, err := dbStruct.getMigrationRow(ctx, file)
 		if err != nil {
-			//return nil, err
 			statusStructs = append(statusStructs, &Out{
 				Name:        file.file.Name(),
 				Status:      "No migrate",
