@@ -6,7 +6,7 @@ format:
 
 
 build:
-	go build -o $(LOCAL_BIN)/migrator ./cmd/migrator
+	go build -buildvcs=false -o $(LOCAL_BIN)/migrator ./cmd/migrator
 
 run-up-dev:
-	docker-compose -p $(PROJECT_NAME) -f docker/docker-compose.yml up --build -d
+	docker-compose -f docker/docker-compose.yml stop && docker-compose -f docker/docker-compose.yml up --build -d

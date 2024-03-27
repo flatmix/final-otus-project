@@ -110,7 +110,7 @@ func Start(mainCtx context.Context, logger *slog.Logger) {
 		}
 		statuses, err := usecase.Status(ctx, postgresConfig)
 		if err != nil {
-			logger.Error("Redo error", "Error", err)
+			logger.Error("Status error", "Error", err)
 			return
 		}
 		err = usecase.TerminalStatusOut(statuses)
@@ -123,7 +123,7 @@ func Start(mainCtx context.Context, logger *slog.Logger) {
 		}
 		dbver, err := usecase.DBVersion(ctx, postgresConfig)
 		if err != nil {
-			logger.Error("Redo error", "Error", err)
+			logger.Error("DBVersion error", "Error", err)
 			return
 		}
 		fmt.Printf("DB Version: %d \n", *dbver)

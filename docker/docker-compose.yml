@@ -12,6 +12,8 @@ services:
     env_file:
       - .env.local
     entrypoint: "tail -f /dev/null"
+#    command:
+#      - "make build"
     depends_on:
       pg_db:
         condition: service_healthy

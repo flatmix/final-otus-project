@@ -2,8 +2,9 @@ name: Otus homework tests
 
 on:
   push:
-    branches:
-      - hw*
+    branches: [ "main", "dev" ]
+  pull_request:
+    branches: [ "main" ]
 
 env:
   GO111MODULE: "on"
