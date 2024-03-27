@@ -1,10 +1,10 @@
-name: Otus homework tests
+name: Final otus project
 
 on:
   push:
     branches: [ "main", "dev" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "dev" ]
 
 env:
   GO111MODULE: "on"
