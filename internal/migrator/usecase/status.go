@@ -2,20 +2,12 @@ package usecase
 
 import (
 	"context"
-	"fmt"
+	"database/sql"
 	"strconv"
 	"time"
-
-	"github.com/flatmix/final-otus-project/internal/migrator/config"
-	"github.com/flatmix/final-otus-project/internal/migrator/storage"
 )
 
-func Status(ctx context.Context, dbConf config.Postgres) (*Outs, error) {
-	db, err := storage.NewDB(dbConf)
-	if err != nil {
-		return nil, fmt.Errorf("usecase.Status: %w", err)
-	}
-
+func Status(ctx context.Context, db *sql.DB) (*Outs, error) {
 	dbStruct := NewDBStruct(db)
 
 	files, err := dbStruct.getAllMigrationFile()

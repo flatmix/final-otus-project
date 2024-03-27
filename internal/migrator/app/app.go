@@ -108,7 +108,7 @@ func Start(mainCtx context.Context, logger *slog.Logger) {
 		if dbErr != nil {
 			return
 		}
-		statuses, err := usecase.Status(ctx, postgresConfig)
+		statuses, err := usecase.Status(ctx, db)
 		if err != nil {
 			logger.Error("Status error", "Error", err)
 			return
@@ -121,7 +121,7 @@ func Start(mainCtx context.Context, logger *slog.Logger) {
 		if dbErr != nil {
 			return
 		}
-		dbver, err := usecase.DBVersion(ctx, postgresConfig)
+		dbver, err := usecase.DBVersion(ctx, db)
 		if err != nil {
 			logger.Error("DBVersion error", "Error", err)
 			return
