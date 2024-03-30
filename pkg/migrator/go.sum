@@ -1,7 +1,11 @@
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/flatmix/final-otus-project v0.0.0-20240327201726-8d9cafeb5bd0 h1:n7S9Y1oJsJJqMAFjpZxagz8+xOlXwAInfZCMX0Y8viQ=
+github.com/flatmix/final-otus-project v0.0.0-20240327201726-8d9cafeb5bd0/go.mod h1:0J5S5sN9eezaRKbXOcf9gVFUVY2zu9pqawrZGQN6FFc=
 github.com/flatmix/final-otus-project v0.0.0-20240327202525-d3a1541f02c4 h1:8JzAs5AWpw7zGwiVc+NNqZlc+6arksn7LCxVzgWpVcw=
 github.com/flatmix/final-otus-project v0.0.0-20240327202525-d3a1541f02c4/go.mod h1:iYn/TNrZ+i1kicKbdZoWtEjNYBzkf4eOZlepS0vfWVs=
+github.com/flatmix/final-otus-project v0.0.0-20240330144321-e868dc1fc348 h1:zwZBtCA/arnVg/eA6SMU5TaiD3HECW6JgSIpyGVWkF8=
+github.com/flatmix/final-otus-project v0.0.0-20240330144321-e868dc1fc348/go.mod h1:kVDxfIXXk8wwnP1nbhiN8Q58oq8pe9PqFq1lt28gZZc=
 github.com/lib/pq v1.10.9 h1:YXG7RB+JIjhP29X+OtkiDnYaXQwpS4JEWq7dtCCRUEw=
 github.com/lib/pq v1.10.9/go.mod h1:AlVN5x4E4T544tWzH6hKfbfQvm3HdbOxrmggDNAPY9o=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=

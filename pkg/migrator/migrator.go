@@ -17,7 +17,8 @@ func Create(name string) error {
 }
 
 func Up(ctx context.Context, db *sql.DB) (*usecase.Outs, error) {
-	outs, err := usecase.Up(ctx, db)
+	dbStruct := usecase.NewDBStruct(db)
+	outs, err := usecase.Up(ctx, dbStruct)
 	if err != nil {
 		return nil, fmt.Errorf("%w", err)
 	}
@@ -25,7 +26,8 @@ func Up(ctx context.Context, db *sql.DB) (*usecase.Outs, error) {
 }
 
 func Down(ctx context.Context, db *sql.DB, all bool, step int) (*usecase.Outs, error) {
-	outs, err := usecase.Down(ctx, db, all, step)
+	dbStruct := usecase.NewDBStruct(db)
+	outs, err := usecase.Down(ctx, dbStruct, all, step)
 	if err != nil {
 		return nil, fmt.Errorf("%w", err)
 	}
@@ -33,7 +35,8 @@ func Down(ctx context.Context, db *sql.DB, all bool, step int) (*usecase.Outs, e
 }
 
 func Redo(ctx context.Context, db *sql.DB, all bool, step int) (*usecase.Outs, error) {
-	outs, err := usecase.Redo(ctx, db, all, step)
+	dbStruct := usecase.NewDBStruct(db)
+	outs, err := usecase.Redo(ctx, dbStruct, all, step)
 	if err != nil {
 		return nil, fmt.Errorf("%w", err)
 	}
@@ -41,7 +44,8 @@ func Redo(ctx context.Context, db *sql.DB, all bool, step int) (*usecase.Outs, e
 }
 
 func Status(ctx context.Context, db *sql.DB) (*usecase.Outs, error) {
-	outs, err := usecase.Status(ctx, db)
+	dbStruct := usecase.NewDBStruct(db)
+	outs, err := usecase.Status(ctx, dbStruct)
 	if err != nil {
 		return nil, fmt.Errorf("%w", err)
 	}
@@ -49,7 +53,8 @@ func Status(ctx context.Context, db *sql.DB) (*usecase.Outs, error) {
 }
 
 func DBVersion(ctx context.Context, db *sql.DB) (*int, error) {
-	version, err := usecase.DBVersion(ctx, db)
+	dbStruct := usecase.NewDBStruct(db)
+	version, err := usecase.DBVersion(ctx, dbStruct)
 	if err != nil {
 		return nil, fmt.Errorf("%w", err)
 	}
