@@ -24,21 +24,23 @@ func Redo(ctx context.Context, redoStruct DBUsecaseContract, all bool, step int)
 		return nil, ErrNotFountMigrationFile
 	}
 
-	outs := &Outs{} //nolint:ineffassign
+	var outs Outs
 
 	if all || step > 0 {
-		outs, err = redoStruct.RedoMigration(ctx, migrations, filesMap)
+		outsRedo, err := redoStruct.RedoMigration(ctx, migrations, filesMap)
 		if err != nil {
 			return nil, fmt.Errorf("redoMigration: %w", err)
 		}
+		outs = *outsRedo
 	} else {
-		outs, err = redoStruct.RedoMigration(ctx, migrations[0:1], filesMap)
+		outsRedo, err := redoStruct.RedoMigration(ctx, migrations[0:1], filesMap)
 		if err != nil {
 			return nil, fmt.Errorf("redoMigration: %w", err)
 		}
+		outs = *outsRedo
 	}
 
-	return outs, nil
+	return &outs, nil
 }
 
 func (ds *DB) RedoMigration(ctx context.Context,

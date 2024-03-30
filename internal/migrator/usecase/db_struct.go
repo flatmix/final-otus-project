@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"regexp"
 	"strings"
@@ -111,10 +110,11 @@ func (ds *DB) GetMigrationRow(ctx context.Context, file FileStruct) (*storage.Mi
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 	for rows.Next() {
 		if err := rows.Scan(&migrationDB.ID, &migrationDB.Name,
 			&migrationDB.Hash, &migrationDB.Version, &migrationDB.CreatedAt, &migrationDB.UpdatedAt); err != nil {
-			log.Fatal(err)
+			return nil, fmt.Errorf("%w", err)
 		}
 	}
 
@@ -139,13 +139,13 @@ func (ds *DB) GetAllMigrationsOrderByVersionDesc(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-
+	defer rows.Close()
 	for rows.Next() {
 		migrationDB := storage.MigrationDBStruct{}
 		if err := rows.Scan(&migrationDB.ID, &migrationDB.Name,
 			&migrationDB.Hash, &migrationDB.Version,
 			&migrationDB.CreatedAt, &migrationDB.UpdatedAt); err != nil {
-			log.Fatal(err)
+			return nil, fmt.Errorf("%w", err)
 		}
 		migrationsDB = append(migrationsDB, migrationDB)
 	}
@@ -160,7 +160,7 @@ func (ds *DB) GetActualVersion(ctx context.Context) int {
 	if err != nil {
 		return 0
 	}
-
+	defer rows.Close()
 	for rows.Next() {
 		if err := rows.Scan(&versionDB); err != nil {
 			return 0
@@ -205,11 +205,12 @@ func (ds *DB) ExistTable(ctx context.Context, schema string, table string) bool 
 	if err != nil {
 		return false
 	}
+	defer rows.Close()
 	var exist bool
 
 	for rows.Next() {
 		if err := rows.Scan(&exist); err != nil {
-			log.Fatal(err)
+			return false
 		}
 	}
 

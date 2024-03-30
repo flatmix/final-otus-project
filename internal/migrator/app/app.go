@@ -17,7 +17,7 @@ const FolderName = "migrations"
 
 var ErrorNoCommand = errors.New("set command first arguments: {up, create, down, redo, status}")
 
-//nolint:gocognit //a lot of error checks
+//nolint:gocognit,funlen //a lot of error checks
 func Start(mainCtx context.Context, logger *slog.Logger) {
 	ctx, cancel := context.WithCancel(mainCtx)
 	defer cancel()
@@ -38,6 +38,13 @@ func Start(mainCtx context.Context, logger *slog.Logger) {
 		logger.Error("Connect to DB", "Error", fmt.Errorf("NewDB: %w", dbErr))
 	}
 	dbStruct := usecase.NewDBStruct(db)
+	defer func() {
+		err := db.Close()
+		if err != nil {
+			logger.Error("db.Close()", "Error", err)
+			return
+		}
+	}()
 
 	switch argsWithProg[1] {
 	case "create":
