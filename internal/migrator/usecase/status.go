@@ -2,15 +2,12 @@ package usecase
 
 import (
 	"context"
-	"database/sql"
 	"strconv"
 	"time"
 )
 
-func Status(ctx context.Context, db *sql.DB) (*Outs, error) {
-	dbStruct := NewDBStruct(db)
-
-	files, err := dbStruct.getAllMigrationFile()
+func Status(ctx context.Context, dbStruct DBUsecaseContract) (*Outs, error) {
+	files, err := dbStruct.GetAllMigrationFile()
 	if err != nil {
 		return nil, err
 	}
@@ -18,19 +15,20 @@ func Status(ctx context.Context, db *sql.DB) (*Outs, error) {
 	statusStructs := make(Outs, 0)
 
 	for _, file := range files {
-		migrationDB, err := dbStruct.getMigrationRow(ctx, file)
+		migrationDB, err := dbStruct.GetMigrationRow(ctx, file)
 		if err != nil {
 			statusStructs = append(statusStructs, &Out{
-				Name:        file.file.Name(),
+				Name:        file.File.Name(),
 				Status:      "No migrate",
 				Version:     "-",
 				TimeMigrate: "-",
 			})
+			continue
 		}
 		status := "Ok"
 		version := "-"
 		timeMigrate := "-"
-		if migrationDB.IsZero() {
+		if migrationDB == nil || migrationDB.IsZero() {
 			status = "No migrate"
 		} else {
 			version = strconv.Itoa(migrationDB.Version)
@@ -39,7 +37,7 @@ func Status(ctx context.Context, db *sql.DB) (*Outs, error) {
 		}
 
 		statusStructs = append(statusStructs, &Out{
-			Name:        file.file.Name(),
+			Name:        file.File.Name(),
 			Status:      status,
 			Version:     version,
 			TimeMigrate: timeMigrate,

@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"os"
@@ -18,15 +17,13 @@ var (
 	ErrNothingForDownMigrate = errors.New("nothing for down migrate")
 )
 
-func Down(ctx context.Context, db *sql.DB, all bool, step int) (*Outs, error) {
-	downStruct := NewDBStruct(db)
-
-	filesMap, err := downStruct.getAllMigrationFileMap()
+func Down(ctx context.Context, downStruct DBUsecaseContract, all bool, step int) (*Outs, error) {
+	filesMap, err := downStruct.GetAllMigrationFileMap()
 	if err != nil {
 		return nil, err
 	}
 
-	migrations, err := downStruct.getAllMigrationsOrderByVersionDesc(ctx, step)
+	migrations, err := downStruct.GetAllMigrationsOrderByVersionDesc(ctx, step)
 	if err != nil {
 		return nil, err
 	}
@@ -39,7 +36,7 @@ func Down(ctx context.Context, db *sql.DB, all bool, step int) (*Outs, error) {
 
 	if all {
 		for _, migration := range migrations {
-			out, err := downStruct.downMigration(ctx, migration, filesMap)
+			out, err := downStruct.DownMigration(ctx, migration, filesMap)
 			if err != nil {
 				return nil, err
 			}
@@ -50,7 +47,7 @@ func Down(ctx context.Context, db *sql.DB, all bool, step int) (*Outs, error) {
 	}
 
 	if !all {
-		out, err := downStruct.downMigration(ctx, migrations[0], filesMap)
+		out, err := downStruct.DownMigration(ctx, migrations[0], filesMap)
 		if err != nil {
 			return nil, err
 		}
@@ -62,7 +59,7 @@ func Down(ctx context.Context, db *sql.DB, all bool, step int) (*Outs, error) {
 	return &outs, nil
 }
 
-func (ds *DB) downMigration(ctx context.Context, migration storage.MigrationDBStruct, filesMap FilesMap) (*Out, error) {
+func (ds *DB) DownMigration(ctx context.Context, migration storage.MigrationDBStruct, filesMap FilesMap) (*Out, error) {
 	file, ok := filesMap[migration.Name]
 	out := Out{
 		Name:   migration.Name,
@@ -77,11 +74,11 @@ func (ds *DB) downMigration(ctx context.Context, migration storage.MigrationDBSt
 		return nil, err
 	}
 
-	err = ds.migrate(ctx, migrateSQLString)
+	err = ds.Migrate(ctx, migrateSQLString)
 	if err != nil {
 		return nil, err
 	}
-	err = ds.deleteMigration(ctx, file)
+	err = ds.DeleteMigration(ctx, file)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +89,7 @@ func (ds *DB) downMigration(ctx context.Context, migration storage.MigrationDBSt
 }
 
 func getDownPart(fileStruct FileStruct) (string, error) {
-	contentFile, err := os.ReadFile(fmt.Sprintf("%s/%s", config.FolderName, fileStruct.file.Name()))
+	contentFile, err := os.ReadFile(fmt.Sprintf("%s/%s", config.FolderName, fileStruct.File.Name()))
 	if err != nil {
 		return "", err
 	}

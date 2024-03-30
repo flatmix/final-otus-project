@@ -37,6 +37,7 @@ func Start(mainCtx context.Context, logger *slog.Logger) {
 	if dbErr != nil {
 		logger.Error("Connect to DB", "Error", fmt.Errorf("NewDB: %w", dbErr))
 	}
+	dbStruct := usecase.NewDBStruct(db)
 
 	switch argsWithProg[1] {
 	case "create":
@@ -55,7 +56,7 @@ func Start(mainCtx context.Context, logger *slog.Logger) {
 		if dbErr != nil {
 			return
 		}
-		outs, err := usecase.Up(ctx, db)
+		outs, err := usecase.Up(ctx, dbStruct)
 		if err != nil {
 			logger.Error("Up error", "Error", err)
 			return
@@ -72,7 +73,7 @@ func Start(mainCtx context.Context, logger *slog.Logger) {
 		if dbErr != nil {
 			return
 		}
-		outs, err := usecase.Down(ctx, db, configuration.All, configuration.Step)
+		outs, err := usecase.Down(ctx, dbStruct, configuration.All, configuration.Step)
 		if err != nil {
 			logger.Error("Down error", "Error", err)
 			return
@@ -90,7 +91,7 @@ func Start(mainCtx context.Context, logger *slog.Logger) {
 		if dbErr != nil {
 			return
 		}
-		outs, err := usecase.Redo(ctx, db, configuration.All, configuration.Step)
+		outs, err := usecase.Redo(ctx, dbStruct, configuration.All, configuration.Step)
 		if err != nil {
 			logger.Error("Redo error", "Error", err)
 			return
@@ -108,7 +109,7 @@ func Start(mainCtx context.Context, logger *slog.Logger) {
 		if dbErr != nil {
 			return
 		}
-		statuses, err := usecase.Status(ctx, db)
+		statuses, err := usecase.Status(ctx, dbStruct)
 		if err != nil {
 			logger.Error("Status error", "Error", err)
 			return
@@ -121,7 +122,7 @@ func Start(mainCtx context.Context, logger *slog.Logger) {
 		if dbErr != nil {
 			return
 		}
-		dbver, err := usecase.DBVersion(ctx, db)
+		dbver, err := usecase.DBVersion(ctx, dbStruct)
 		if err != nil {
 			logger.Error("DBVersion error", "Error", err)
 			return

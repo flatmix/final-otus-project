@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"io/fs"
+	"time"
 )
 
 const createMigrationsTable = `CREATE TABLE IF NOT EXISTS public.%s
@@ -47,9 +48,18 @@ FROM public.%s WHERE %s.version >= $1 ORDER BY version DESC, id DESC`
 
 type FilesMap map[string]FileStruct
 
+type FileInfo interface {
+	Name() string       // base name of the file
+	Size() int64        // length in bytes for regular files; system-dependent for others
+	Mode() fs.FileMode  // file mode bits
+	ModTime() time.Time // modification time
+	IsDir() bool        // abbreviation for Mode().IsDir()
+	Sys() any           // underlying data source (can return nil)
+}
+
 type FileStruct struct {
-	file fs.FileInfo
-	hash string
+	File FileInfo
+	Hash string
 }
 
 type Outs []*Out

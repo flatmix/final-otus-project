@@ -5,10 +5,13 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io"
 	"log"
 	"os"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/flatmix/final-otus-project/internal/migrator/config"
@@ -16,22 +19,22 @@ import (
 )
 
 type DBUsecaseContract interface {
-	getHash(fileName string) (string, error)
-	getAllMigrationFile() ([]FileStruct, error)
-	getAllMigrationFileMap() (FilesMap, error)
-	getMigrationRow(ctx context.Context, file FileStruct) (*storage.MigrationDBStruct, error)
-	getAllMigrationsOrderByVersionDesc(ctx context.Context,
+	GetHash(fileName string) (string, error)
+	GetAllMigrationFile() ([]FileStruct, error)
+	GetAllMigrationFileMap() (FilesMap, error)
+	GetMigrationRow(ctx context.Context, file FileStruct) (*storage.MigrationDBStruct, error)
+	GetAllMigrationsOrderByVersionDesc(ctx context.Context,
 		step int,
 	) (storage.MigrationsDBStruct, error)
-	getActualVersion(ctx context.Context) int
-	migrate(ctx context.Context, migrateSQLString string) error
-	createMigration(ctx context.Context, file FileStruct, version int) error
-	deleteMigration(ctx context.Context, file FileStruct) error
-	existTable(ctx context.Context, schema string, table string) bool
-	createMigrationsTable(ctx context.Context) error
-	redoMigration(ctx context.Context, migrations storage.MigrationsDBStruct, filesMap FilesMap) (*Outs, error)
-	downMigration(ctx context.Context, migration storage.MigrationDBStruct, filesMap FilesMap) (*Out, error)
-	upMigration(ctx context.Context, file FileStruct, actualVersion int) (*Out, error)
+	GetActualVersion(ctx context.Context) int
+	Migrate(ctx context.Context, migrateSQLString string) error
+	CreateMigration(ctx context.Context, file FileStruct, version int) error
+	DeleteMigration(ctx context.Context, file FileStruct) error
+	ExistTable(ctx context.Context, schema string, table string) bool
+	CreateMigrationsTable(ctx context.Context) error
+	RedoMigration(ctx context.Context, migrations storage.MigrationsDBStruct, filesMap FilesMap) (*Outs, error)
+	DownMigration(ctx context.Context, migration storage.MigrationDBStruct, filesMap FilesMap) (*Out, error)
+	GetUpPart(fileStruct FileStruct) (string, error)
 }
 
 type DB struct {
@@ -42,7 +45,7 @@ func NewDBStruct(db *sql.DB) DBUsecaseContract {
 	return &DB{db: db}
 }
 
-func (ds *DB) getHash(fileName string) (string, error) {
+func (ds *DB) GetHash(fileName string) (string, error) {
 	hash := sha256.New()
 	file, err := os.Open(fmt.Sprintf("%s/%s", config.FolderName, fileName))
 	if err != nil {
@@ -56,7 +59,7 @@ func (ds *DB) getHash(fileName string) (string, error) {
 	return stringHash, nil
 }
 
-func (ds *DB) getAllMigrationFile() ([]FileStruct, error) {
+func (ds *DB) GetAllMigrationFile() ([]FileStruct, error) {
 	var migrations []FileStruct //nolint:prealloc
 
 	files, _ := os.ReadDir(config.FolderName)
@@ -65,21 +68,21 @@ func (ds *DB) getAllMigrationFile() ([]FileStruct, error) {
 		if err != nil {
 			return nil, fmt.Errorf("get file info: %w", err)
 		}
-		hash, err := ds.getHash(file.Name())
+		hash, err := ds.GetHash(file.Name())
 		if err != nil {
 			return nil, fmt.Errorf("get file hash: %w", err)
 		}
 
 		migrations = append(migrations, FileStruct{
-			file: info,
-			hash: hash,
+			File: info,
+			Hash: hash,
 		})
 	}
 
 	return migrations, nil
 }
 
-func (ds *DB) getAllMigrationFileMap() (FilesMap, error) {
+func (ds *DB) GetAllMigrationFileMap() (FilesMap, error) {
 	files, _ := os.ReadDir(config.FolderName)
 	migrations := make(FilesMap, len(files))
 	for _, file := range files {
@@ -87,24 +90,24 @@ func (ds *DB) getAllMigrationFileMap() (FilesMap, error) {
 		if err != nil {
 			return nil, fmt.Errorf("get file info: %w", err)
 		}
-		hash, err := ds.getHash(file.Name())
+		hash, err := ds.GetHash(file.Name())
 		if err != nil {
 			return nil, fmt.Errorf("get file hash: %w", err)
 		}
 
 		migrations[file.Name()] = FileStruct{
-			file: info,
-			hash: hash,
+			File: info,
+			Hash: hash,
 		}
 	}
 
 	return migrations, nil
 }
 
-func (ds *DB) getMigrationRow(ctx context.Context, file FileStruct) (*storage.MigrationDBStruct, error) {
+func (ds *DB) GetMigrationRow(ctx context.Context, file FileStruct) (*storage.MigrationDBStruct, error) {
 	selectMigrationTableQuery := fmt.Sprintf(selectMigrationTable, config.MigrationTableName)
 	var migrationDB storage.MigrationDBStruct
-	rows, err := ds.db.QueryContext(ctx, selectMigrationTableQuery, file.file.Name())
+	rows, err := ds.db.QueryContext(ctx, selectMigrationTableQuery, file.File.Name())
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +121,7 @@ func (ds *DB) getMigrationRow(ctx context.Context, file FileStruct) (*storage.Mi
 	return &migrationDB, nil
 }
 
-func (ds *DB) getAllMigrationsOrderByVersionDesc(ctx context.Context,
+func (ds *DB) GetAllMigrationsOrderByVersionDesc(ctx context.Context,
 	step int,
 ) (storage.MigrationsDBStruct, error) {
 	selectAllMigrationsTableQuery := fmt.Sprintf(selectAllMigrationsTable,
@@ -126,7 +129,7 @@ func (ds *DB) getAllMigrationsOrderByVersionDesc(ctx context.Context,
 
 	var migrationsDB []storage.MigrationDBStruct
 
-	actual := ds.getActualVersion(ctx)
+	actual := ds.GetActualVersion(ctx)
 
 	if step == 0 {
 		actual = -1
@@ -150,7 +153,7 @@ func (ds *DB) getAllMigrationsOrderByVersionDesc(ctx context.Context,
 	return migrationsDB, nil
 }
 
-func (ds *DB) getActualVersion(ctx context.Context) int {
+func (ds *DB) GetActualVersion(ctx context.Context) int {
 	getActualVersion := fmt.Sprintf(getMaxVersionFromMigrationsTable, config.MigrationTableName)
 	var versionDB int
 	rows, err := ds.db.QueryContext(ctx, getActualVersion)
@@ -166,7 +169,7 @@ func (ds *DB) getActualVersion(ctx context.Context) int {
 	return versionDB + 1
 }
 
-func (ds *DB) migrate(ctx context.Context, migrateSQLString string) error {
+func (ds *DB) Migrate(ctx context.Context, migrateSQLString string) error {
 	_, err := ds.db.ExecContext(ctx, migrateSQLString)
 	if err != nil {
 		return err
@@ -175,9 +178,9 @@ func (ds *DB) migrate(ctx context.Context, migrateSQLString string) error {
 	return nil
 }
 
-func (ds *DB) createMigration(ctx context.Context, file FileStruct, version int) error {
+func (ds *DB) CreateMigration(ctx context.Context, file FileStruct, version int) error {
 	insertMigrationsTableQuery := fmt.Sprintf(insertMigrationsTable, config.MigrationTableName)
-	_, err := ds.db.ExecContext(ctx, insertMigrationsTableQuery, file.file.Name(), file.hash, version, time.Now())
+	_, err := ds.db.ExecContext(ctx, insertMigrationsTableQuery, file.File.Name(), file.Hash, version, time.Now())
 	if err != nil {
 		return err
 	}
@@ -185,9 +188,9 @@ func (ds *DB) createMigration(ctx context.Context, file FileStruct, version int)
 	return nil
 }
 
-func (ds *DB) deleteMigration(ctx context.Context, file FileStruct) error {
+func (ds *DB) DeleteMigration(ctx context.Context, file FileStruct) error {
 	deleteRowFromMigrationsTableQuery := fmt.Sprintf(deleteRowFromMigrationsTable, config.MigrationTableName)
-	_, err := ds.db.ExecContext(ctx, deleteRowFromMigrationsTableQuery, file.file.Name())
+	_, err := ds.db.ExecContext(ctx, deleteRowFromMigrationsTableQuery, file.File.Name())
 	if err != nil {
 		return err
 	}
@@ -195,7 +198,7 @@ func (ds *DB) deleteMigration(ctx context.Context, file FileStruct) error {
 	return nil
 }
 
-func (ds *DB) existTable(ctx context.Context, schema string, table string) bool {
+func (ds *DB) ExistTable(ctx context.Context, schema string, table string) bool {
 	selectExistsTableQuery := fmt.Sprintf(selectExistsTable, schema, table)
 
 	rows, err := ds.db.QueryContext(ctx, selectExistsTableQuery)
@@ -213,8 +216,8 @@ func (ds *DB) existTable(ctx context.Context, schema string, table string) bool 
 	return exist
 }
 
-func (ds *DB) createMigrationsTable(ctx context.Context) error {
-	exists := ds.existTable(ctx, "public", config.MigrationTableName)
+func (ds *DB) CreateMigrationsTable(ctx context.Context) error {
+	exists := ds.ExistTable(ctx, "public", config.MigrationTableName)
 
 	if !exists {
 		createMigrationsTableQuery := fmt.Sprintf(createMigrationsTable, config.MigrationTableName)
@@ -227,4 +230,22 @@ func (ds *DB) createMigrationsTable(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (ds *DB) GetUpPart(fileStruct FileStruct) (string, error) {
+	contentFile, err := os.ReadFile(fmt.Sprintf("%s/%s", config.FolderName, fileStruct.File.Name()))
+	if err != nil {
+		return "", err
+	}
+	content := string(contentFile)
+
+	re := regexp.MustCompile(regexpUpTemplate)
+
+	res := re.FindAllStringSubmatch(content, -1)
+
+	if len(res) == 0 {
+		return "", errors.New("not found template string")
+	}
+
+	return strings.TrimSpace(res[0][1]), nil
 }
