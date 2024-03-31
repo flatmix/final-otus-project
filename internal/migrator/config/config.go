@@ -16,6 +16,7 @@ type Postgres struct {
 }
 
 type Config struct {
-	Step int
-	All  bool
+	Step       int
+	All        bool
+	FolderName string
 }

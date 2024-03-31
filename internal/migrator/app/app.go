@@ -39,22 +39,25 @@ func Start(mainCtx context.Context, logger *slog.Logger) {
 	}
 	dbStruct := usecase.NewDBStruct(db)
 	defer func() {
-		err := db.Close()
-		if err != nil {
-			logger.Error("db.Close()", "Error", err)
-			return
+		if dbErr == nil {
+			err := db.Close()
+			if err != nil {
+				logger.Error("db.Close()", "Error", err)
+				return
+			}
 		}
 	}()
 
 	switch argsWithProg[1] {
 	case "create":
 		if name == "" && len(argsWithProg) >= 3 {
-			name = argsWithProg[2]
+			name = argsWithProg[len(argsWithProg)-1]
 		}
+		fmt.Printf("%+v", argsWithProg)
 		if name == "" {
 			fmt.Println("Set name for create command: {--name=... or second arguments}")
 		}
-		err = usecase.Create(name)
+		err = usecase.Create(name, &configuration)
 		if err != nil {
 			logger.Error("Create error", "Error", err)
 			return
@@ -153,6 +156,7 @@ func setConfig(name *string, postgresConfig *config.Postgres, configuration *con
 	fs.BoolVar(&configuration.All, "all", false, "All migration: {down, redo}, default `false`")
 	fs.StringVar(name, "name", "", "The name of migration")
 	fs.IntVar(&configuration.Step, "step", 0, "Step down and redo on version, works for: {down, redo}, default `0`")
+	fs.StringVar(&configuration.FolderName, "dir", "migrations", "The folder where the migration files are located, default `migrations`")
 	argsWithProg := os.Args
 	if len(argsWithProg) < 2 {
 		return []string{}, ErrorNoCommand
