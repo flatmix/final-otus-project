@@ -17,6 +17,11 @@ import (
 	"github.com/flatmix/final-otus-project/internal/migrator/storage"
 )
 
+type DBContract interface {
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
+}
+
 type DBUsecaseContract interface {
 	GetHash(fileName string) (string, error)
 	GetAllMigrationFile() ([]FileStruct, error)
@@ -31,22 +36,22 @@ type DBUsecaseContract interface {
 	DeleteMigration(ctx context.Context, file FileStruct) error
 	ExistTable(ctx context.Context, schema string, table string) bool
 	CreateMigrationsTable(ctx context.Context) error
-	RedoMigration(ctx context.Context, migrations storage.MigrationsDBStruct, filesMap FilesMap) (*Outs, error)
-	DownMigration(ctx context.Context, migration storage.MigrationDBStruct, filesMap FilesMap) (*Out, error)
 	GetUpPart(fileStruct FileStruct) (string, error)
+	GetDownPart(fileStruct FileStruct) (string, error)
 }
 
 type DB struct {
-	db *sql.DB
+	db  DBContract
+	cfg *config.Config
 }
 
-func NewDBStruct(db *sql.DB) DBUsecaseContract {
-	return &DB{db: db}
+func NewDBStruct(db *sql.DB, cfg *config.Config) DBUsecaseContract {
+	return &DB{db: db, cfg: cfg}
 }
 
 func (ds *DB) GetHash(fileName string) (string, error) {
 	hash := sha256.New()
-	file, err := os.Open(fmt.Sprintf("%s/%s", config.FolderName, fileName))
+	file, err := os.Open(fmt.Sprintf("%s/%s", ds.cfg.FolderName, fileName))
 	if err != nil {
 		return "", fmt.Errorf("open file: %w", err)
 	}
@@ -61,7 +66,7 @@ func (ds *DB) GetHash(fileName string) (string, error) {
 func (ds *DB) GetAllMigrationFile() ([]FileStruct, error) {
 	var migrations []FileStruct //nolint:prealloc
 
-	files, _ := os.ReadDir(config.FolderName)
+	files, _ := os.ReadDir(ds.cfg.FolderName)
 	for _, file := range files {
 		info, err := file.Info()
 		if err != nil {
@@ -82,7 +87,7 @@ func (ds *DB) GetAllMigrationFile() ([]FileStruct, error) {
 }
 
 func (ds *DB) GetAllMigrationFileMap() (FilesMap, error) {
-	files, _ := os.ReadDir(config.FolderName)
+	files, _ := os.ReadDir(ds.cfg.FolderName)
 	migrations := make(FilesMap, len(files))
 	for _, file := range files {
 		info, err := file.Info()
@@ -149,7 +154,6 @@ func (ds *DB) GetAllMigrationsOrderByVersionDesc(ctx context.Context,
 		}
 		migrationsDB = append(migrationsDB, migrationDB)
 	}
-
 	return migrationsDB, nil
 }
 
@@ -234,13 +238,31 @@ func (ds *DB) CreateMigrationsTable(ctx context.Context) error {
 }
 
 func (ds *DB) GetUpPart(fileStruct FileStruct) (string, error) {
-	contentFile, err := os.ReadFile(fmt.Sprintf("%s/%s", config.FolderName, fileStruct.File.Name()))
+	contentFile, err := os.ReadFile(fmt.Sprintf("%s/%s", ds.cfg.FolderName, fileStruct.File.Name()))
 	if err != nil {
 		return "", err
 	}
 	content := string(contentFile)
 
 	re := regexp.MustCompile(regexpUpTemplate)
+
+	res := re.FindAllStringSubmatch(content, -1)
+
+	if len(res) == 0 {
+		return "", errors.New("not found template string")
+	}
+
+	return strings.TrimSpace(res[0][1]), nil
+}
+
+func (ds *DB) GetDownPart(fileStruct FileStruct) (string, error) {
+	contentFile, err := os.ReadFile(fmt.Sprintf("%s/%s", ds.cfg.FolderName, fileStruct.File.Name()))
+	if err != nil {
+		return "", err
+	}
+	content := string(contentFile)
+
+	re := regexp.MustCompile(regexpDownTemplate)
 
 	res := re.FindAllStringSubmatch(content, -1)
 

@@ -22,7 +22,7 @@ func TerminalStatusOut(statusStructs *Outs) error {
 	return nil
 }
 
-func TerminalUpOut(outs *Outs) error {
+func TerminalOut(outs *Outs) error {
 	terminalOut := out.NewTabWriter()
 	defer terminalOut.Flush()
 

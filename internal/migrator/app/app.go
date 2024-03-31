@@ -37,7 +37,7 @@ func Start(mainCtx context.Context, logger *slog.Logger) {
 	if dbErr != nil {
 		logger.Error("Connect to DB", "Error", fmt.Errorf("NewDB: %w", dbErr))
 	}
-	dbStruct := usecase.NewDBStruct(db)
+	dbStruct := usecase.NewDBStruct(db, &configuration)
 	defer func() {
 		if dbErr == nil {
 			err := db.Close()
@@ -71,7 +71,7 @@ func Start(mainCtx context.Context, logger *slog.Logger) {
 			logger.Error("Up error", "Error", err)
 			return
 		}
-		err = usecase.TerminalUpOut(outs)
+		err = usecase.TerminalOut(outs)
 		if err != nil {
 			logger.Error("TerminalUpOut", "Error", err)
 			return
@@ -89,7 +89,7 @@ func Start(mainCtx context.Context, logger *slog.Logger) {
 			return
 		}
 
-		err = usecase.TerminalUpOut(outs)
+		err = usecase.TerminalOut(outs)
 		if err != nil {
 			logger.Error("TerminalUpOut", "Error", err)
 			return
@@ -107,7 +107,7 @@ func Start(mainCtx context.Context, logger *slog.Logger) {
 			return
 		}
 
-		err = usecase.TerminalUpOut(outs)
+		err = usecase.TerminalOut(outs)
 		if err != nil {
 			logger.Error("TerminalUpOut", "Error", err)
 			return
@@ -156,7 +156,8 @@ func setConfig(name *string, postgresConfig *config.Postgres, configuration *con
 	fs.BoolVar(&configuration.All, "all", false, "All migration: {down, redo}, default `false`")
 	fs.StringVar(name, "name", "", "The name of migration")
 	fs.IntVar(&configuration.Step, "step", 0, "Step down and redo on version, works for: {down, redo}, default `0`")
-	fs.StringVar(&configuration.FolderName, "dir", "migrations", "The folder where the migration files are located, default `migrations`")
+	fs.StringVar(&configuration.FolderName,
+		"dir", "migrations", "The folder where the migration files are located, default `migrations`")
 	argsWithProg := os.Args
 	if len(argsWithProg) < 2 {
 		return []string{}, ErrorNoCommand

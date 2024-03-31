@@ -23,11 +23,14 @@ func TestToSnakeCase_ok(t *testing.T) {
 	assert.Equal(t, expectedString, resultString)
 }
 
-func TestCreateEmptyFile_ok(t *testing.T) {
-	nameForTest := "testMigrationFile"
+const (
+	nameForTest = "testMigrationFile"
+	folderName  = "test"
+)
 
+func TestCreateEmptyFile_ok(t *testing.T) {
 	cfg := config.Config{
-		FolderName: "test",
+		FolderName: folderName,
 	}
 	createStruct := NewCreateStruct(nameForTest, &cfg)
 
@@ -43,10 +46,8 @@ func TestCreateEmptyFile_ok(t *testing.T) {
 }
 
 func TestCreateEmptyFile_fail(t *testing.T) {
-	nameForTest := "testMigrationFile"
-
 	cfg := config.Config{
-		FolderName: "test",
+		FolderName: folderName,
 	}
 	createStruct := NewCreateStruct(nameForTest, &cfg)
 
@@ -59,10 +60,8 @@ func TestCreateEmptyFile_fail(t *testing.T) {
 }
 
 func TestContinueIfDuplicates_ok(t *testing.T) {
-	nameForTest := "testMigrationFile"
-
 	cfg := config.Config{
-		FolderName: "test",
+		FolderName: folderName,
 	}
 	createStruct := NewCreateStruct(nameForTest, &cfg)
 
@@ -72,7 +71,7 @@ func TestContinueIfDuplicates_ok(t *testing.T) {
 
 func TestCreate_ok(t *testing.T) {
 	cfg := config.Config{
-		FolderName: "test",
+		FolderName: folderName,
 	}
 
 	err := Create("test_migration_file", &cfg)
@@ -87,7 +86,7 @@ func TestCreate_ok(t *testing.T) {
 
 func TestCreate_fail(t *testing.T) {
 	cfg := config.Config{
-		FolderName: "test",
+		FolderName: folderName,
 	}
 
 	err := Create("test_migration_file", &cfg)

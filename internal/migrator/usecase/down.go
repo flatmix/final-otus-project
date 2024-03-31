@@ -3,17 +3,13 @@ package usecase
 import (
 	"context"
 	"errors"
-	"fmt"
-	"os"
-	"regexp"
-	"strings"
 
-	"github.com/flatmix/final-otus-project/internal/migrator/config"
 	"github.com/flatmix/final-otus-project/internal/migrator/storage"
 )
 
 var (
 	ErrNotFountMigrationFile = errors.New("not found migration file")
+	ErrNotFountMigration     = errors.New("not found migrations in db")
 	ErrNothingForDownMigrate = errors.New("nothing for down migrate")
 )
 
@@ -34,9 +30,9 @@ func Down(ctx context.Context, downStruct DBUsecaseContract, all bool, step int)
 
 	outs := make(Outs, 0)
 
-	if all {
+	if all || step > 0 {
 		for _, migration := range migrations {
-			out, err := downStruct.DownMigration(ctx, migration, filesMap)
+			out, err := DownMigration(ctx, downStruct, migration, filesMap)
 			if err != nil {
 				return nil, err
 			}
@@ -46,8 +42,8 @@ func Down(ctx context.Context, downStruct DBUsecaseContract, all bool, step int)
 		}
 	}
 
-	if !all {
-		out, err := downStruct.DownMigration(ctx, migrations[0], filesMap)
+	if !all && step == 0 {
+		out, err := DownMigration(ctx, downStruct, migrations[0], filesMap)
 		if err != nil {
 			return nil, err
 		}
@@ -59,7 +55,9 @@ func Down(ctx context.Context, downStruct DBUsecaseContract, all bool, step int)
 	return &outs, nil
 }
 
-func (ds *DB) DownMigration(ctx context.Context, migration storage.MigrationDBStruct, filesMap FilesMap) (*Out, error) {
+func DownMigration(ctx context.Context, ds DBUsecaseContract,
+	migration storage.MigrationDBStruct, filesMap FilesMap,
+) (*Out, error) {
 	file, ok := filesMap[migration.Name]
 	out := Out{
 		Name:   migration.Name,
@@ -69,7 +67,7 @@ func (ds *DB) DownMigration(ctx context.Context, migration storage.MigrationDBSt
 		out.Status = "not found migration file"
 		return nil, ErrNotFountMigrationFile
 	}
-	migrateSQLString, err := getDownPart(file)
+	migrateSQLString, err := ds.GetDownPart(file)
 	if err != nil {
 		return nil, err
 	}
@@ -86,22 +84,4 @@ func (ds *DB) DownMigration(ctx context.Context, migration storage.MigrationDBSt
 	out.Status = "down ok"
 
 	return &out, nil
-}
-
-func getDownPart(fileStruct FileStruct) (string, error) {
-	contentFile, err := os.ReadFile(fmt.Sprintf("%s/%s", config.FolderName, fileStruct.File.Name()))
-	if err != nil {
-		return "", err
-	}
-	content := string(contentFile)
-
-	re := regexp.MustCompile(regexpDownTemplate)
-
-	res := re.FindAllStringSubmatch(content, -1)
-
-	if len(res) == 0 {
-		return "", errors.New("not found template string")
-	}
-
-	return strings.TrimSpace(res[0][1]), nil
 }

@@ -165,66 +165,6 @@ func (_c *DBUsecaseContract_DeleteMigration_Call) RunAndReturn(run func(context.
 	return _c
 }
 
-// DownMigration provides a mock function with given fields: ctx, migration, filesMap
-func (_m *DBUsecaseContract) DownMigration(ctx context.Context, migration storage.MigrationDBStruct, filesMap usecase.FilesMap) (*usecase.Out, error) {
-	ret := _m.Called(ctx, migration, filesMap)
-
-	if len(ret) == 0 {
-		panic("no return value specified for DownMigration")
-	}
-
-	var r0 *usecase.Out
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, storage.MigrationDBStruct, usecase.FilesMap) (*usecase.Out, error)); ok {
-		return rf(ctx, migration, filesMap)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, storage.MigrationDBStruct, usecase.FilesMap) *usecase.Out); ok {
-		r0 = rf(ctx, migration, filesMap)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*usecase.Out)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, storage.MigrationDBStruct, usecase.FilesMap) error); ok {
-		r1 = rf(ctx, migration, filesMap)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// DBUsecaseContract_DownMigration_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DownMigration'
-type DBUsecaseContract_DownMigration_Call struct {
-	*mock.Call
-}
-
-// DownMigration is a helper method to define mock.On call
-//   - ctx context.Context
-//   - migration storage.MigrationDBStruct
-//   - filesMap usecase.FilesMap
-func (_e *DBUsecaseContract_Expecter) DownMigration(ctx interface{}, migration interface{}, filesMap interface{}) *DBUsecaseContract_DownMigration_Call {
-	return &DBUsecaseContract_DownMigration_Call{Call: _e.mock.On("DownMigration", ctx, migration, filesMap)}
-}
-
-func (_c *DBUsecaseContract_DownMigration_Call) Run(run func(ctx context.Context, migration storage.MigrationDBStruct, filesMap usecase.FilesMap)) *DBUsecaseContract_DownMigration_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(storage.MigrationDBStruct), args[2].(usecase.FilesMap))
-	})
-	return _c
-}
-
-func (_c *DBUsecaseContract_DownMigration_Call) Return(_a0 *usecase.Out, _a1 error) *DBUsecaseContract_DownMigration_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *DBUsecaseContract_DownMigration_Call) RunAndReturn(run func(context.Context, storage.MigrationDBStruct, usecase.FilesMap) (*usecase.Out, error)) *DBUsecaseContract_DownMigration_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // ExistTable provides a mock function with given fields: ctx, schema, table
 func (_m *DBUsecaseContract) ExistTable(ctx context.Context, schema string, table string) bool {
 	ret := _m.Called(ctx, schema, table)
@@ -492,6 +432,62 @@ func (_c *DBUsecaseContract_GetAllMigrationsOrderByVersionDesc_Call) RunAndRetur
 	return _c
 }
 
+// GetDownPart provides a mock function with given fields: fileStruct
+func (_m *DBUsecaseContract) GetDownPart(fileStruct usecase.FileStruct) (string, error) {
+	ret := _m.Called(fileStruct)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetDownPart")
+	}
+
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(usecase.FileStruct) (string, error)); ok {
+		return rf(fileStruct)
+	}
+	if rf, ok := ret.Get(0).(func(usecase.FileStruct) string); ok {
+		r0 = rf(fileStruct)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func(usecase.FileStruct) error); ok {
+		r1 = rf(fileStruct)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// DBUsecaseContract_GetDownPart_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetDownPart'
+type DBUsecaseContract_GetDownPart_Call struct {
+	*mock.Call
+}
+
+// GetDownPart is a helper method to define mock.On call
+//   - fileStruct usecase.FileStruct
+func (_e *DBUsecaseContract_Expecter) GetDownPart(fileStruct interface{}) *DBUsecaseContract_GetDownPart_Call {
+	return &DBUsecaseContract_GetDownPart_Call{Call: _e.mock.On("GetDownPart", fileStruct)}
+}
+
+func (_c *DBUsecaseContract_GetDownPart_Call) Run(run func(fileStruct usecase.FileStruct)) *DBUsecaseContract_GetDownPart_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(usecase.FileStruct))
+	})
+	return _c
+}
+
+func (_c *DBUsecaseContract_GetDownPart_Call) Return(_a0 string, _a1 error) *DBUsecaseContract_GetDownPart_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *DBUsecaseContract_GetDownPart_Call) RunAndReturn(run func(usecase.FileStruct) (string, error)) *DBUsecaseContract_GetDownPart_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetHash provides a mock function with given fields: fileName
 func (_m *DBUsecaseContract) GetHash(fileName string) (string, error) {
 	ret := _m.Called(fileName)
@@ -706,66 +702,6 @@ func (_c *DBUsecaseContract_Migrate_Call) Return(_a0 error) *DBUsecaseContract_M
 }
 
 func (_c *DBUsecaseContract_Migrate_Call) RunAndReturn(run func(context.Context, string) error) *DBUsecaseContract_Migrate_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// RedoMigration provides a mock function with given fields: ctx, migrations, filesMap
-func (_m *DBUsecaseContract) RedoMigration(ctx context.Context, migrations storage.MigrationsDBStruct, filesMap usecase.FilesMap) (*usecase.Outs, error) {
-	ret := _m.Called(ctx, migrations, filesMap)
-
-	if len(ret) == 0 {
-		panic("no return value specified for RedoMigration")
-	}
-
-	var r0 *usecase.Outs
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, storage.MigrationsDBStruct, usecase.FilesMap) (*usecase.Outs, error)); ok {
-		return rf(ctx, migrations, filesMap)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, storage.MigrationsDBStruct, usecase.FilesMap) *usecase.Outs); ok {
-		r0 = rf(ctx, migrations, filesMap)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*usecase.Outs)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, storage.MigrationsDBStruct, usecase.FilesMap) error); ok {
-		r1 = rf(ctx, migrations, filesMap)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// DBUsecaseContract_RedoMigration_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RedoMigration'
-type DBUsecaseContract_RedoMigration_Call struct {
-	*mock.Call
-}
-
-// RedoMigration is a helper method to define mock.On call
-//   - ctx context.Context
-//   - migrations storage.MigrationsDBStruct
-//   - filesMap usecase.FilesMap
-func (_e *DBUsecaseContract_Expecter) RedoMigration(ctx interface{}, migrations interface{}, filesMap interface{}) *DBUsecaseContract_RedoMigration_Call {
-	return &DBUsecaseContract_RedoMigration_Call{Call: _e.mock.On("RedoMigration", ctx, migrations, filesMap)}
-}
-
-func (_c *DBUsecaseContract_RedoMigration_Call) Run(run func(ctx context.Context, migrations storage.MigrationsDBStruct, filesMap usecase.FilesMap)) *DBUsecaseContract_RedoMigration_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(storage.MigrationsDBStruct), args[2].(usecase.FilesMap))
-	})
-	return _c
-}
-
-func (_c *DBUsecaseContract_RedoMigration_Call) Return(_a0 *usecase.Outs, _a1 error) *DBUsecaseContract_RedoMigration_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *DBUsecaseContract_RedoMigration_Call) RunAndReturn(run func(context.Context, storage.MigrationsDBStruct, usecase.FilesMap) (*usecase.Outs, error)) *DBUsecaseContract_RedoMigration_Call {
 	_c.Call.Return(run)
 	return _c
 }

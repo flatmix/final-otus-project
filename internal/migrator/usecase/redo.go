@@ -21,19 +21,19 @@ func Redo(ctx context.Context, redoStruct DBUsecaseContract, all bool, step int)
 	}
 
 	if len(migrations) == 0 {
-		return nil, ErrNotFountMigrationFile
+		return nil, ErrNotFountMigration
 	}
 
 	var outs Outs
 
 	if all || step > 0 {
-		outsRedo, err := redoStruct.RedoMigration(ctx, migrations, filesMap)
+		outsRedo, err := RedoMigration(ctx, redoStruct, migrations, filesMap)
 		if err != nil {
 			return nil, fmt.Errorf("redoMigration: %w", err)
 		}
 		outs = *outsRedo
 	} else {
-		outsRedo, err := redoStruct.RedoMigration(ctx, migrations[0:1], filesMap)
+		outsRedo, err := RedoMigration(ctx, redoStruct, migrations[0:1], filesMap)
 		if err != nil {
 			return nil, fmt.Errorf("redoMigration: %w", err)
 		}
@@ -43,13 +43,13 @@ func Redo(ctx context.Context, redoStruct DBUsecaseContract, all bool, step int)
 	return &outs, nil
 }
 
-func (ds *DB) RedoMigration(ctx context.Context,
+func RedoMigration(ctx context.Context, ds DBUsecaseContract,
 	migrations storage.MigrationsDBStruct, filesMap FilesMap,
 ) (*Outs, error) {
 	outs := make(Outs, 0)
 
 	for _, migration := range migrations {
-		downOut, err := ds.DownMigration(ctx, migration, filesMap)
+		downOut, err := DownMigration(ctx, ds, migration, filesMap)
 		if err != nil {
 			return nil, err
 		}
