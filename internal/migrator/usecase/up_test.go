@@ -16,7 +16,7 @@ const migrateSQLString = "test"
 
 func TestUp_Ok(t *testing.T) {
 	ctx := context.Background()
-	dbMock := mocks.NewDBUsecaseContract(t)
+	ucMock := mocks.NewUCContract(t)
 
 	fileInfo := mocks.NewFileInfo(t)
 	fileInfo2 := mocks.NewFileInfo(t)
@@ -38,56 +38,56 @@ func TestUp_Ok(t *testing.T) {
 		},
 	}
 
-	dbMock.EXPECT().GetAllMigrationFile().Return(expfiles, nil)
-	dbMock.EXPECT().CreateMigrationsTable(ctx).Return(nil)
-	dbMock.EXPECT().GetActualVersion(ctx).Return(actualVersion)
+	ucMock.EXPECT().GetAllMigrationFile().Return(expfiles, nil)
+	ucMock.EXPECT().CreateMigrationsTable(ctx).Return(nil)
+	ucMock.EXPECT().GetActualVersion(ctx).Return(actualVersion)
 
-	dbMock.EXPECT().GetMigrationRow(ctx, expfiles[0]).Return(nil, nil)
+	ucMock.EXPECT().GetMigrationRow(ctx, expfiles[0]).Return(nil, nil)
 	fileInfo.EXPECT().Name().Return("test3").Once()
-	dbMock.EXPECT().GetUpPart(expfiles[0]).Return(migrateSQLString, nil)
-	dbMock.EXPECT().Migrate(ctx, migrateSQLString).Return(nil)
-	dbMock.EXPECT().CreateMigration(ctx, expfiles[0], actualVersion).Return(nil)
+	ucMock.EXPECT().GetUpPart(expfiles[0]).Return(migrateSQLString, nil)
+	ucMock.EXPECT().Migrate(ctx, migrateSQLString).Return(nil)
+	ucMock.EXPECT().CreateMigration(ctx, expfiles[0], actualVersion).Return(nil)
 
-	dbMock.EXPECT().GetMigrationRow(ctx, expfiles[1]).Return(nil, nil)
+	ucMock.EXPECT().GetMigrationRow(ctx, expfiles[1]).Return(nil, nil)
 	fileInfo2.EXPECT().Name().Return("test4")
-	dbMock.EXPECT().GetUpPart(expfiles[1]).Return(migrateSQLString, nil)
-	dbMock.EXPECT().Migrate(ctx, migrateSQLString).Return(nil)
-	dbMock.EXPECT().CreateMigration(ctx, expfiles[1], actualVersion).Return(nil)
+	ucMock.EXPECT().GetUpPart(expfiles[1]).Return(migrateSQLString, nil)
+	ucMock.EXPECT().Migrate(ctx, migrateSQLString).Return(nil)
+	ucMock.EXPECT().CreateMigration(ctx, expfiles[1], actualVersion).Return(nil)
 
-	outs, err := usecase.Up(ctx, dbMock)
+	outs, err := usecase.Up(ctx, ucMock)
 	assert.NoError(t, err)
 	assert.Equal(t, &expOuts, outs)
 }
 
 func TestUpMigration_OK(t *testing.T) {
 	ctx := context.Background()
-	dbMock := mocks.NewDBUsecaseContract(t)
+	ucMock := mocks.NewUCContract(t)
 
 	actualVersion := 2
 
 	fileInfo := mocks.NewFileInfo(t)
 	fileStruct := usecase.FileStruct{File: fileInfo, Hash: "Hash1"}
 
-	dbMock.EXPECT().GetMigrationRow(ctx, fileStruct).Return(nil, nil)
+	ucMock.EXPECT().GetMigrationRow(ctx, fileStruct).Return(nil, nil)
 	fileInfo.EXPECT().Name().Return("test5")
-	dbMock.EXPECT().GetUpPart(fileStruct).Return(migrateSQLString, nil)
+	ucMock.EXPECT().GetUpPart(fileStruct).Return(migrateSQLString, nil)
 
-	dbMock.EXPECT().Migrate(ctx, migrateSQLString).Return(nil)
-	dbMock.EXPECT().CreateMigration(ctx, fileStruct, actualVersion).Return(nil)
+	ucMock.EXPECT().Migrate(ctx, migrateSQLString).Return(nil)
+	ucMock.EXPECT().CreateMigration(ctx, fileStruct, actualVersion).Return(nil)
 
 	expOut := usecase.Out{
 		Name:   "test5",
 		Status: "migrate ok",
 	}
 
-	out, err := usecase.UpMigration(ctx, dbMock, fileStruct, actualVersion)
+	out, err := usecase.UpMigration(ctx, ucMock, fileStruct, actualVersion)
 	assert.NoError(t, err)
 	assert.Equal(t, &expOut, out)
 }
 
 func TestUp_GetAllMigrationFileError(t *testing.T) {
 	ctx := context.Background()
-	dbMock := mocks.NewDBUsecaseContract(t)
+	ucMock := mocks.NewUCContract(t)
 
 	fileInfo := mocks.NewFileInfo(t)
 	fileInfo2 := mocks.NewFileInfo(t)
@@ -99,15 +99,15 @@ func TestUp_GetAllMigrationFileError(t *testing.T) {
 
 	expError := errors.New("test error")
 
-	dbMock.EXPECT().GetAllMigrationFile().Return(expfiles, expError)
+	ucMock.EXPECT().GetAllMigrationFile().Return(expfiles, expError)
 
-	_, err := usecase.Up(ctx, dbMock)
+	_, err := usecase.Up(ctx, ucMock)
 	assert.ErrorIs(t, err, expError)
 }
 
 func TestUp_CreateMigrationsTableError(t *testing.T) {
 	ctx := context.Background()
-	dbMock := mocks.NewDBUsecaseContract(t)
+	ucMock := mocks.NewUCContract(t)
 
 	fileInfo := mocks.NewFileInfo(t)
 	fileInfo2 := mocks.NewFileInfo(t)
@@ -119,16 +119,16 @@ func TestUp_CreateMigrationsTableError(t *testing.T) {
 
 	expError := errors.New("test error")
 
-	dbMock.EXPECT().GetAllMigrationFile().Return(expfiles, nil)
-	dbMock.EXPECT().CreateMigrationsTable(ctx).Return(expError)
+	ucMock.EXPECT().GetAllMigrationFile().Return(expfiles, nil)
+	ucMock.EXPECT().CreateMigrationsTable(ctx).Return(expError)
 
-	_, err := usecase.Up(ctx, dbMock)
+	_, err := usecase.Up(ctx, ucMock)
 	assert.ErrorIs(t, err, expError)
 }
 
 func TestUp_UpMigrationError(t *testing.T) {
 	ctx := context.Background()
-	dbMock := mocks.NewDBUsecaseContract(t)
+	ucMock := mocks.NewUCContract(t)
 
 	fileInfo := mocks.NewFileInfo(t)
 	fileInfo2 := mocks.NewFileInfo(t)
@@ -142,19 +142,19 @@ func TestUp_UpMigrationError(t *testing.T) {
 
 	expError := errors.New("test error")
 
-	dbMock.EXPECT().GetAllMigrationFile().Return(expfiles, nil)
-	dbMock.EXPECT().CreateMigrationsTable(ctx).Return(nil)
-	dbMock.EXPECT().GetActualVersion(ctx).Return(actualVersion)
+	ucMock.EXPECT().GetAllMigrationFile().Return(expfiles, nil)
+	ucMock.EXPECT().CreateMigrationsTable(ctx).Return(nil)
+	ucMock.EXPECT().GetActualVersion(ctx).Return(actualVersion)
 
-	dbMock.EXPECT().GetMigrationRow(ctx, expfiles[0]).Return(nil, expError)
+	ucMock.EXPECT().GetMigrationRow(ctx, expfiles[0]).Return(nil, expError)
 
-	_, err := usecase.Up(ctx, dbMock)
+	_, err := usecase.Up(ctx, ucMock)
 	assert.ErrorIs(t, err, expError)
 }
 
 func TestUpMigration_GetUpPartError(t *testing.T) {
 	ctx := context.Background()
-	dbMock := mocks.NewDBUsecaseContract(t)
+	ucMock := mocks.NewUCContract(t)
 
 	actualVersion := 2
 
@@ -163,17 +163,17 @@ func TestUpMigration_GetUpPartError(t *testing.T) {
 
 	expError := errors.New("test error")
 
-	dbMock.EXPECT().GetMigrationRow(ctx, fileStruct).Return(nil, nil)
+	ucMock.EXPECT().GetMigrationRow(ctx, fileStruct).Return(nil, nil)
 	fileInfo.EXPECT().Name().Return("test5")
-	dbMock.EXPECT().GetUpPart(fileStruct).Return("", expError)
+	ucMock.EXPECT().GetUpPart(fileStruct).Return("", expError)
 
-	_, err := usecase.UpMigration(ctx, dbMock, fileStruct, actualVersion)
+	_, err := usecase.UpMigration(ctx, ucMock, fileStruct, actualVersion)
 	assert.ErrorIs(t, err, expError)
 }
 
 func TestUpMigration_MigrateError(t *testing.T) {
 	ctx := context.Background()
-	dbMock := mocks.NewDBUsecaseContract(t)
+	ucMock := mocks.NewUCContract(t)
 
 	actualVersion := 2
 	migrateSQLString := "test"
@@ -183,19 +183,19 @@ func TestUpMigration_MigrateError(t *testing.T) {
 
 	expError := errors.New("test error")
 
-	dbMock.EXPECT().GetMigrationRow(ctx, fileStruct).Return(nil, nil)
+	ucMock.EXPECT().GetMigrationRow(ctx, fileStruct).Return(nil, nil)
 	fileInfo.EXPECT().Name().Return("test5")
-	dbMock.EXPECT().GetUpPart(fileStruct).Return(migrateSQLString, nil)
+	ucMock.EXPECT().GetUpPart(fileStruct).Return(migrateSQLString, nil)
 
-	dbMock.EXPECT().Migrate(ctx, migrateSQLString).Return(expError)
+	ucMock.EXPECT().Migrate(ctx, migrateSQLString).Return(expError)
 
-	_, err := usecase.UpMigration(ctx, dbMock, fileStruct, actualVersion)
+	_, err := usecase.UpMigration(ctx, ucMock, fileStruct, actualVersion)
 	assert.ErrorIs(t, err, expError)
 }
 
 func TestUpMigration_CreateMigrationError(t *testing.T) {
 	ctx := context.Background()
-	dbMock := mocks.NewDBUsecaseContract(t)
+	ucMock := mocks.NewUCContract(t)
 
 	actualVersion := 2
 	migrateSQLString := "test"
@@ -205,20 +205,20 @@ func TestUpMigration_CreateMigrationError(t *testing.T) {
 
 	expError := errors.New("test error")
 
-	dbMock.EXPECT().GetMigrationRow(ctx, fileStruct).Return(nil, nil)
+	ucMock.EXPECT().GetMigrationRow(ctx, fileStruct).Return(nil, nil)
 	fileInfo.EXPECT().Name().Return("test5")
-	dbMock.EXPECT().GetUpPart(fileStruct).Return(migrateSQLString, nil)
+	ucMock.EXPECT().GetUpPart(fileStruct).Return(migrateSQLString, nil)
 
-	dbMock.EXPECT().Migrate(ctx, migrateSQLString).Return(nil)
-	dbMock.EXPECT().CreateMigration(ctx, fileStruct, actualVersion).Return(expError)
+	ucMock.EXPECT().Migrate(ctx, migrateSQLString).Return(nil)
+	ucMock.EXPECT().CreateMigration(ctx, fileStruct, actualVersion).Return(expError)
 
-	_, err := usecase.UpMigration(ctx, dbMock, fileStruct, actualVersion)
+	_, err := usecase.UpMigration(ctx, ucMock, fileStruct, actualVersion)
 	assert.ErrorIs(t, err, expError)
 }
 
 func TestUpMigration_FileHasBeenChnged(t *testing.T) {
 	ctx := context.Background()
-	dbMock := mocks.NewDBUsecaseContract(t)
+	ucMock := mocks.NewUCContract(t)
 
 	actualVersion := 2
 	now := time.Now()
@@ -227,7 +227,7 @@ func TestUpMigration_FileHasBeenChnged(t *testing.T) {
 	fileInfo := mocks.NewFileInfo(t)
 	fileStruct := usecase.FileStruct{File: fileInfo, Hash: "Hash1"}
 
-	dbMock.EXPECT().GetMigrationRow(ctx, fileStruct).Return(&storage.MigrationDBStruct{
+	ucMock.EXPECT().GetMigrationRow(ctx, fileStruct).Return(&storage.MigrationDBStruct{
 		ID:        1,
 		Name:      "test5",
 		Hash:      "Hash2",
@@ -242,14 +242,14 @@ func TestUpMigration_FileHasBeenChnged(t *testing.T) {
 		Status: usecase.FileHasBeenChanged,
 	}
 
-	out, err := usecase.UpMigration(ctx, dbMock, fileStruct, actualVersion)
+	out, err := usecase.UpMigration(ctx, ucMock, fileStruct, actualVersion)
 	assert.NoError(t, err)
 	assert.Equal(t, &expOut, out)
 }
 
 func TestUpMigration_NothingMigrate(t *testing.T) {
 	ctx := context.Background()
-	dbMock := mocks.NewDBUsecaseContract(t)
+	ucMock := mocks.NewUCContract(t)
 
 	actualVersion := 2
 	now := time.Now()
@@ -258,7 +258,7 @@ func TestUpMigration_NothingMigrate(t *testing.T) {
 	fileInfo := mocks.NewFileInfo(t)
 	fileStruct := usecase.FileStruct{File: fileInfo, Hash: "Hash1"}
 
-	dbMock.EXPECT().GetMigrationRow(ctx, fileStruct).Return(&storage.MigrationDBStruct{
+	ucMock.EXPECT().GetMigrationRow(ctx, fileStruct).Return(&storage.MigrationDBStruct{
 		ID:        1,
 		Name:      "test5",
 		Hash:      "Hash1",
@@ -268,7 +268,7 @@ func TestUpMigration_NothingMigrate(t *testing.T) {
 	}, nil)
 	fileInfo.EXPECT().Name().Return("test5")
 
-	out, err := usecase.UpMigration(ctx, dbMock, fileStruct, actualVersion)
+	out, err := usecase.UpMigration(ctx, ucMock, fileStruct, actualVersion)
 	assert.NoError(t, err)
 	assert.Nil(t, out)
 }

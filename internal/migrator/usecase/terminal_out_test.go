@@ -4,9 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/flatmix/final-otus-project/internal/migrator/usecase"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_TerminalOutOK(t *testing.T) {

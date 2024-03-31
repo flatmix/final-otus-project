@@ -13,7 +13,7 @@ import (
 
 func TestDBVersion_OK(t *testing.T) {
 	ctx := context.Background()
-	dbStruct := mocks.NewDBUsecaseContract(t)
+	ucMock := mocks.NewUCContract(t)
 
 	migrationExp := []storage.MigrationDBStruct{
 		{
@@ -26,21 +26,21 @@ func TestDBVersion_OK(t *testing.T) {
 		},
 	}
 
-	dbStruct.EXPECT().GetAllMigrationsOrderByVersionDesc(ctx, 0).Return(migrationExp, nil)
+	ucMock.EXPECT().GetAllMigrationsOrderByVersionDesc(ctx, 0).Return(migrationExp, nil)
 
-	version, err := usecase.DBVersion(ctx, dbStruct)
+	version, err := usecase.DBVersion(ctx, ucMock)
 	assert.NoError(t, err)
 	assert.Equal(t, migrationExp[0].Version, *version)
 }
 
 func TestDBVersion_Fail(t *testing.T) {
 	ctx := context.Background()
-	dbStruct := mocks.NewDBUsecaseContract(t)
+	ucMock := mocks.NewUCContract(t)
 
 	expectedError := errors.New("test errors")
 
-	dbStruct.EXPECT().GetAllMigrationsOrderByVersionDesc(ctx, 0).Return(nil, expectedError)
+	ucMock.EXPECT().GetAllMigrationsOrderByVersionDesc(ctx, 0).Return(nil, expectedError)
 
-	_, err := usecase.DBVersion(ctx, dbStruct)
+	_, err := usecase.DBVersion(ctx, ucMock)
 	assert.ErrorIs(t, err, expectedError)
 }

@@ -14,7 +14,7 @@ import (
 
 func TestStatus_OK(t *testing.T) {
 	ctx := context.Background()
-	dbStruct := mocks.NewDBUsecaseContract(t)
+	ucMock := mocks.NewUCContract(t)
 	now := time.Now()
 	nowDB := now.Format(time.RFC3339Nano)
 	nowStruct := now.Format(time.DateTime)
@@ -41,8 +41,8 @@ func TestStatus_OK(t *testing.T) {
 		},
 	}
 
-	dbStruct.EXPECT().GetAllMigrationFile().Return(expfiles, nil)
-	dbStruct.EXPECT().GetMigrationRow(ctx, expfiles[0]).Return(&storage.MigrationDBStruct{
+	ucMock.EXPECT().GetAllMigrationFile().Return(expfiles, nil)
+	ucMock.EXPECT().GetMigrationRow(ctx, expfiles[0]).Return(&storage.MigrationDBStruct{
 		ID:        1,
 		Name:      "Test",
 		Hash:      "Hash1",
@@ -52,7 +52,7 @@ func TestStatus_OK(t *testing.T) {
 	}, nil)
 	fileInfo.EXPECT().Name().Return("Test")
 
-	dbStruct.EXPECT().GetMigrationRow(ctx, expfiles[1]).Return(&storage.MigrationDBStruct{
+	ucMock.EXPECT().GetMigrationRow(ctx, expfiles[1]).Return(&storage.MigrationDBStruct{
 		ID:        2,
 		Name:      "Test 2",
 		Hash:      "Hash2",
@@ -62,14 +62,14 @@ func TestStatus_OK(t *testing.T) {
 	}, nil)
 	fileInfo2.EXPECT().Name().Return("Test 2")
 
-	outs, err := usecase.Status(ctx, dbStruct)
+	outs, err := usecase.Status(ctx, ucMock)
 	assert.NoError(t, err)
 	assert.Equal(t, &expOuts, outs)
 }
 
 func TestStatus_NoMigrate(t *testing.T) {
 	ctx := context.Background()
-	dbStruct := mocks.NewDBUsecaseContract(t)
+	ucMock := mocks.NewUCContract(t)
 
 	fileInfo := mocks.NewFileInfo(t)
 
@@ -86,11 +86,11 @@ func TestStatus_NoMigrate(t *testing.T) {
 		},
 	}
 
-	dbStruct.EXPECT().GetAllMigrationFile().Return(expfiles, nil)
-	dbStruct.EXPECT().GetMigrationRow(ctx, expfiles[0]).Return(nil, errors.New("test error"))
+	ucMock.EXPECT().GetAllMigrationFile().Return(expfiles, nil)
+	ucMock.EXPECT().GetMigrationRow(ctx, expfiles[0]).Return(nil, errors.New("test error"))
 	fileInfo.EXPECT().Name().Return("Test")
 
-	outs, err := usecase.Status(ctx, dbStruct)
+	outs, err := usecase.Status(ctx, ucMock)
 
 	assert.NoError(t, err)
 	assert.Equal(t, &expOuts, outs)
@@ -98,7 +98,7 @@ func TestStatus_NoMigrate(t *testing.T) {
 
 func TestStatus_EmptyMigrate(t *testing.T) {
 	ctx := context.Background()
-	dbStruct := mocks.NewDBUsecaseContract(t)
+	ucMock := mocks.NewUCContract(t)
 
 	fileInfo := mocks.NewFileInfo(t)
 
@@ -115,11 +115,11 @@ func TestStatus_EmptyMigrate(t *testing.T) {
 		},
 	}
 
-	dbStruct.EXPECT().GetAllMigrationFile().Return(expfiles, nil)
-	dbStruct.EXPECT().GetMigrationRow(ctx, expfiles[0]).Return(nil, nil)
+	ucMock.EXPECT().GetAllMigrationFile().Return(expfiles, nil)
+	ucMock.EXPECT().GetMigrationRow(ctx, expfiles[0]).Return(nil, nil)
 	fileInfo.EXPECT().Name().Return("Test")
 
-	outs, err := usecase.Status(ctx, dbStruct)
+	outs, err := usecase.Status(ctx, ucMock)
 
 	assert.NoError(t, err)
 	assert.Equal(t, &expOuts, outs)
@@ -127,13 +127,13 @@ func TestStatus_EmptyMigrate(t *testing.T) {
 
 func TestStatus_Fail(t *testing.T) {
 	ctx := context.Background()
-	dbStruct := mocks.NewDBUsecaseContract(t)
+	ucMock := mocks.NewUCContract(t)
 
 	expError := errors.New("test error")
 
-	dbStruct.EXPECT().GetAllMigrationFile().Return(nil, expError)
+	ucMock.EXPECT().GetAllMigrationFile().Return(nil, expError)
 
-	_, err := usecase.Status(ctx, dbStruct)
+	_, err := usecase.Status(ctx, ucMock)
 
 	assert.ErrorIs(t, err, expError)
 }

@@ -14,7 +14,7 @@ import (
 
 func TestRedo_Ok(t *testing.T) {
 	ctx := context.Background()
-	dbMock := mocks.NewDBUsecaseContract(t)
+	ucMock := mocks.NewUCContract(t)
 
 	now := time.Now()
 	nowDB := now.Format(time.RFC3339Nano)
@@ -58,27 +58,27 @@ func TestRedo_Ok(t *testing.T) {
 		},
 	}
 
-	dbMock.EXPECT().GetAllMigrationFileMap().Return(expfiles, nil)
-	dbMock.EXPECT().GetAllMigrationsOrderByVersionDesc(ctx, 0).Return(migrations, nil)
+	ucMock.EXPECT().GetAllMigrationFileMap().Return(expfiles, nil)
+	ucMock.EXPECT().GetAllMigrationsOrderByVersionDesc(ctx, 0).Return(migrations, nil)
 
-	dbMock.EXPECT().GetDownPart(expfiles["test1"]).Return(downSQLString, nil)
-	dbMock.EXPECT().Migrate(ctx, downSQLString).Return(nil)
-	dbMock.EXPECT().DeleteMigration(ctx, expfiles["test1"]).Return(nil)
+	ucMock.EXPECT().GetDownPart(expfiles["test1"]).Return(downSQLString, nil)
+	ucMock.EXPECT().Migrate(ctx, downSQLString).Return(nil)
+	ucMock.EXPECT().DeleteMigration(ctx, expfiles["test1"]).Return(nil)
 
-	dbMock.EXPECT().GetMigrationRow(ctx, expfiles["test1"]).Return(nil, nil)
+	ucMock.EXPECT().GetMigrationRow(ctx, expfiles["test1"]).Return(nil, nil)
 	fileInfo.EXPECT().Name().Return("test1").Once()
-	dbMock.EXPECT().GetUpPart(expfiles["test1"]).Return(migrateSQLString, nil)
-	dbMock.EXPECT().Migrate(ctx, migrateSQLString).Return(nil)
-	dbMock.EXPECT().CreateMigration(ctx, expfiles["test1"], actualVersion).Return(nil)
+	ucMock.EXPECT().GetUpPart(expfiles["test1"]).Return(migrateSQLString, nil)
+	ucMock.EXPECT().Migrate(ctx, migrateSQLString).Return(nil)
+	ucMock.EXPECT().CreateMigration(ctx, expfiles["test1"], actualVersion).Return(nil)
 
-	outs, err := usecase.Redo(ctx, dbMock, false, 0)
+	outs, err := usecase.Redo(ctx, ucMock, false, 0)
 	assert.NoError(t, err)
 	assert.Equal(t, &expOuts, outs)
 }
 
 func TestRedo_AllOk(t *testing.T) {
 	ctx := context.Background()
-	dbMock := mocks.NewDBUsecaseContract(t)
+	ucMock := mocks.NewUCContract(t)
 
 	now := time.Now()
 	nowDB := now.Format(time.RFC3339Nano)
@@ -130,37 +130,37 @@ func TestRedo_AllOk(t *testing.T) {
 		},
 	}
 
-	dbMock.EXPECT().GetAllMigrationFileMap().Return(expfiles, nil)
-	dbMock.EXPECT().GetAllMigrationsOrderByVersionDesc(ctx, 0).Return(migrations, nil)
+	ucMock.EXPECT().GetAllMigrationFileMap().Return(expfiles, nil)
+	ucMock.EXPECT().GetAllMigrationsOrderByVersionDesc(ctx, 0).Return(migrations, nil)
 
-	dbMock.EXPECT().GetDownPart(expfiles["test1"]).Return(downSQLString, nil)
-	dbMock.EXPECT().Migrate(ctx, downSQLString).Return(nil)
-	dbMock.EXPECT().DeleteMigration(ctx, expfiles["test1"]).Return(nil)
+	ucMock.EXPECT().GetDownPart(expfiles["test1"]).Return(downSQLString, nil)
+	ucMock.EXPECT().Migrate(ctx, downSQLString).Return(nil)
+	ucMock.EXPECT().DeleteMigration(ctx, expfiles["test1"]).Return(nil)
 
-	dbMock.EXPECT().GetDownPart(expfiles["test2"]).Return(downSQLString, nil)
-	dbMock.EXPECT().Migrate(ctx, downSQLString).Return(nil)
-	dbMock.EXPECT().DeleteMigration(ctx, expfiles["test2"]).Return(nil)
+	ucMock.EXPECT().GetDownPart(expfiles["test2"]).Return(downSQLString, nil)
+	ucMock.EXPECT().Migrate(ctx, downSQLString).Return(nil)
+	ucMock.EXPECT().DeleteMigration(ctx, expfiles["test2"]).Return(nil)
 
-	dbMock.EXPECT().GetMigrationRow(ctx, expfiles["test2"]).Return(nil, nil)
+	ucMock.EXPECT().GetMigrationRow(ctx, expfiles["test2"]).Return(nil, nil)
 	fileInfo2.EXPECT().Name().Return("test2")
-	dbMock.EXPECT().GetUpPart(expfiles["test2"]).Return(migrateSQLString, nil)
-	dbMock.EXPECT().Migrate(ctx, migrateSQLString).Return(nil)
-	dbMock.EXPECT().CreateMigration(ctx, expfiles["test2"], actualVersion).Return(nil)
+	ucMock.EXPECT().GetUpPart(expfiles["test2"]).Return(migrateSQLString, nil)
+	ucMock.EXPECT().Migrate(ctx, migrateSQLString).Return(nil)
+	ucMock.EXPECT().CreateMigration(ctx, expfiles["test2"], actualVersion).Return(nil)
 
-	dbMock.EXPECT().GetMigrationRow(ctx, expfiles["test1"]).Return(nil, nil)
+	ucMock.EXPECT().GetMigrationRow(ctx, expfiles["test1"]).Return(nil, nil)
 	fileInfo.EXPECT().Name().Return("test1")
-	dbMock.EXPECT().GetUpPart(expfiles["test1"]).Return(migrateSQLString, nil)
-	dbMock.EXPECT().Migrate(ctx, migrateSQLString).Return(nil)
-	dbMock.EXPECT().CreateMigration(ctx, expfiles["test1"], actualVersion).Return(nil)
+	ucMock.EXPECT().GetUpPart(expfiles["test1"]).Return(migrateSQLString, nil)
+	ucMock.EXPECT().Migrate(ctx, migrateSQLString).Return(nil)
+	ucMock.EXPECT().CreateMigration(ctx, expfiles["test1"], actualVersion).Return(nil)
 
-	outs, err := usecase.Redo(ctx, dbMock, true, 0)
+	outs, err := usecase.Redo(ctx, ucMock, true, 0)
 	assert.NoError(t, err)
 	assert.Equal(t, &expOuts, outs)
 }
 
 func TestRedo_UpMigrationError(t *testing.T) {
 	ctx := context.Background()
-	dbMock := mocks.NewDBUsecaseContract(t)
+	ucMock := mocks.NewUCContract(t)
 
 	now := time.Now()
 	nowDB := now.Format(time.RFC3339Nano)
@@ -195,22 +195,22 @@ func TestRedo_UpMigrationError(t *testing.T) {
 
 	expError := errors.New("test error")
 
-	dbMock.EXPECT().GetAllMigrationFileMap().Return(expfiles, nil)
-	dbMock.EXPECT().GetAllMigrationsOrderByVersionDesc(ctx, 0).Return(migrations, nil)
+	ucMock.EXPECT().GetAllMigrationFileMap().Return(expfiles, nil)
+	ucMock.EXPECT().GetAllMigrationsOrderByVersionDesc(ctx, 0).Return(migrations, nil)
 
-	dbMock.EXPECT().GetDownPart(expfiles["test1"]).Return(downSQLString, nil)
-	dbMock.EXPECT().Migrate(ctx, downSQLString).Return(nil)
-	dbMock.EXPECT().DeleteMigration(ctx, expfiles["test1"]).Return(nil)
+	ucMock.EXPECT().GetDownPart(expfiles["test1"]).Return(downSQLString, nil)
+	ucMock.EXPECT().Migrate(ctx, downSQLString).Return(nil)
+	ucMock.EXPECT().DeleteMigration(ctx, expfiles["test1"]).Return(nil)
 
-	dbMock.EXPECT().GetMigrationRow(ctx, expfiles["test1"]).Return(nil, expError)
+	ucMock.EXPECT().GetMigrationRow(ctx, expfiles["test1"]).Return(nil, expError)
 
-	_, err := usecase.Redo(ctx, dbMock, false, 0)
+	_, err := usecase.Redo(ctx, ucMock, false, 0)
 	assert.ErrorIs(t, err, expError)
 }
 
 func TestRedo_NotFountMigrationFileError(t *testing.T) {
 	ctx := context.Background()
-	dbMock := mocks.NewDBUsecaseContract(t)
+	ucMock := mocks.NewUCContract(t)
 
 	now := time.Now()
 	nowDB := now.Format(time.RFC3339Nano)
@@ -246,16 +246,16 @@ func TestRedo_NotFountMigrationFileError(t *testing.T) {
 		},
 	}
 
-	dbMock.EXPECT().GetAllMigrationFileMap().Return(expfilesFail, nil)
-	dbMock.EXPECT().GetAllMigrationsOrderByVersionDesc(ctx, 0).Return(migrations, nil)
+	ucMock.EXPECT().GetAllMigrationFileMap().Return(expfilesFail, nil)
+	ucMock.EXPECT().GetAllMigrationsOrderByVersionDesc(ctx, 0).Return(migrations, nil)
 
-	_, err := usecase.Redo(ctx, dbMock, true, 0)
+	_, err := usecase.Redo(ctx, ucMock, true, 0)
 	assert.ErrorIs(t, err, usecase.ErrNotFountMigrationFile)
 }
 
 func TestRedo_NotFountMigrationError(t *testing.T) {
 	ctx := context.Background()
-	dbMock := mocks.NewDBUsecaseContract(t)
+	ucMock := mocks.NewUCContract(t)
 
 	fileInfo := mocks.NewFileInfo(t)
 	fileInfo2 := mocks.NewFileInfo(t)
@@ -266,16 +266,16 @@ func TestRedo_NotFountMigrationError(t *testing.T) {
 
 	migrations := storage.MigrationsDBStruct{}
 
-	dbMock.EXPECT().GetAllMigrationFileMap().Return(expfiles, nil)
-	dbMock.EXPECT().GetAllMigrationsOrderByVersionDesc(ctx, 0).Return(migrations, nil)
+	ucMock.EXPECT().GetAllMigrationFileMap().Return(expfiles, nil)
+	ucMock.EXPECT().GetAllMigrationsOrderByVersionDesc(ctx, 0).Return(migrations, nil)
 
-	_, err := usecase.Redo(ctx, dbMock, false, 0)
+	_, err := usecase.Redo(ctx, ucMock, false, 0)
 	assert.ErrorIs(t, err, usecase.ErrNotFountMigration)
 }
 
 func TestRedo_GetAllMigrationsOrderByVersionDescError(t *testing.T) {
 	ctx := context.Background()
-	dbMock := mocks.NewDBUsecaseContract(t)
+	ucMock := mocks.NewUCContract(t)
 
 	fileInfo := mocks.NewFileInfo(t)
 	fileInfo2 := mocks.NewFileInfo(t)
@@ -286,16 +286,16 @@ func TestRedo_GetAllMigrationsOrderByVersionDescError(t *testing.T) {
 
 	expError := errors.New("test error")
 
-	dbMock.EXPECT().GetAllMigrationFileMap().Return(expfiles, nil)
-	dbMock.EXPECT().GetAllMigrationsOrderByVersionDesc(ctx, 0).Return(nil, expError)
+	ucMock.EXPECT().GetAllMigrationFileMap().Return(expfiles, nil)
+	ucMock.EXPECT().GetAllMigrationsOrderByVersionDesc(ctx, 0).Return(nil, expError)
 
-	_, err := usecase.Redo(ctx, dbMock, false, 0)
+	_, err := usecase.Redo(ctx, ucMock, false, 0)
 	assert.ErrorIs(t, err, expError)
 }
 
 func TestRedo_GetAllMigrationFileMapError(t *testing.T) {
 	ctx := context.Background()
-	dbMock := mocks.NewDBUsecaseContract(t)
+	ucMock := mocks.NewUCContract(t)
 
 	fileInfo := mocks.NewFileInfo(t)
 
@@ -304,8 +304,8 @@ func TestRedo_GetAllMigrationFileMapError(t *testing.T) {
 
 	expError := errors.New("test error")
 
-	dbMock.EXPECT().GetAllMigrationFileMap().Return(nil, expError)
+	ucMock.EXPECT().GetAllMigrationFileMap().Return(nil, expError)
 
-	_, err := usecase.Redo(ctx, dbMock, false, 0)
+	_, err := usecase.Redo(ctx, ucMock, false, 0)
 	assert.ErrorIs(t, err, expError)
 }

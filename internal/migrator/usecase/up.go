@@ -8,7 +8,7 @@ import (
 
 const FileHasBeenChanged = "the migration file has been changed, attention!!!"
 
-func Up(ctx context.Context, db DBUsecaseContract) (*Outs, error) {
+func Up(ctx context.Context, db UCContract) (*Outs, error) {
 	files, err := db.GetAllMigrationFile()
 	if err != nil {
 		return nil, err
@@ -35,7 +35,7 @@ func Up(ctx context.Context, db DBUsecaseContract) (*Outs, error) {
 	return &outUps, nil
 }
 
-func UpMigration(ctx context.Context, ds DBUsecaseContract, file FileStruct, actualVersion int) (*Out, error) {
+func UpMigration(ctx context.Context, ds UCContract, file FileStruct, actualVersion int) (*Out, error) {
 	migrationDB, err := ds.GetMigrationRow(ctx, file)
 	if err != nil {
 		return nil, err

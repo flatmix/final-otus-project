@@ -22,10 +22,15 @@ type DBContract interface {
 	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
 }
 
-type DBUsecaseContract interface {
+type FileUsecaseContract interface {
 	GetHash(fileName string) (string, error)
 	GetAllMigrationFile() ([]FileStruct, error)
 	GetAllMigrationFileMap() (FilesMap, error)
+	GetUpPart(fileStruct FileStruct) (string, error)
+	GetDownPart(fileStruct FileStruct) (string, error)
+}
+
+type DBUsecaseContract interface {
 	GetMigrationRow(ctx context.Context, file FileStruct) (*storage.MigrationDBStruct, error)
 	GetAllMigrationsOrderByVersionDesc(ctx context.Context,
 		step int,
@@ -36,22 +41,25 @@ type DBUsecaseContract interface {
 	DeleteMigration(ctx context.Context, file FileStruct) error
 	ExistTable(ctx context.Context, schema string, table string) bool
 	CreateMigrationsTable(ctx context.Context) error
-	GetUpPart(fileStruct FileStruct) (string, error)
-	GetDownPart(fileStruct FileStruct) (string, error)
 }
 
-type DB struct {
+type UCContract interface {
+	FileUsecaseContract
+	DBUsecaseContract
+}
+
+type Usecase struct {
 	db  DBContract
 	cfg *config.Config
 }
 
-func NewDBStruct(db *sql.DB, cfg *config.Config) DBUsecaseContract {
-	return &DB{db: db, cfg: cfg}
+func NewUsecase(db DBContract, cfg *config.Config) UCContract {
+	return &Usecase{db: db, cfg: cfg}
 }
 
-func (ds *DB) GetHash(fileName string) (string, error) {
+func (uc *Usecase) GetHash(fileName string) (string, error) {
 	hash := sha256.New()
-	file, err := os.Open(fmt.Sprintf("%s/%s", ds.cfg.FolderName, fileName))
+	file, err := os.Open(fmt.Sprintf("%s/%s", uc.cfg.FolderName, fileName))
 	if err != nil {
 		return "", fmt.Errorf("open file: %w", err)
 	}
@@ -63,16 +71,16 @@ func (ds *DB) GetHash(fileName string) (string, error) {
 	return stringHash, nil
 }
 
-func (ds *DB) GetAllMigrationFile() ([]FileStruct, error) {
+func (uc *Usecase) GetAllMigrationFile() ([]FileStruct, error) {
 	var migrations []FileStruct //nolint:prealloc
 
-	files, _ := os.ReadDir(ds.cfg.FolderName)
+	files, _ := os.ReadDir(uc.cfg.FolderName)
 	for _, file := range files {
 		info, err := file.Info()
 		if err != nil {
 			return nil, fmt.Errorf("get file info: %w", err)
 		}
-		hash, err := ds.GetHash(file.Name())
+		hash, err := uc.GetHash(file.Name())
 		if err != nil {
 			return nil, fmt.Errorf("get file hash: %w", err)
 		}
@@ -86,15 +94,15 @@ func (ds *DB) GetAllMigrationFile() ([]FileStruct, error) {
 	return migrations, nil
 }
 
-func (ds *DB) GetAllMigrationFileMap() (FilesMap, error) {
-	files, _ := os.ReadDir(ds.cfg.FolderName)
+func (uc *Usecase) GetAllMigrationFileMap() (FilesMap, error) {
+	files, _ := os.ReadDir(uc.cfg.FolderName)
 	migrations := make(FilesMap, len(files))
 	for _, file := range files {
 		info, err := file.Info()
 		if err != nil {
 			return nil, fmt.Errorf("get file info: %w", err)
 		}
-		hash, err := ds.GetHash(file.Name())
+		hash, err := uc.GetHash(file.Name())
 		if err != nil {
 			return nil, fmt.Errorf("get file hash: %w", err)
 		}
@@ -108,10 +116,10 @@ func (ds *DB) GetAllMigrationFileMap() (FilesMap, error) {
 	return migrations, nil
 }
 
-func (ds *DB) GetMigrationRow(ctx context.Context, file FileStruct) (*storage.MigrationDBStruct, error) {
+func (uc *Usecase) GetMigrationRow(ctx context.Context, file FileStruct) (*storage.MigrationDBStruct, error) {
 	selectMigrationTableQuery := fmt.Sprintf(selectMigrationTable, config.MigrationTableName)
 	var migrationDB storage.MigrationDBStruct
-	rows, err := ds.db.QueryContext(ctx, selectMigrationTableQuery, file.File.Name())
+	rows, err := uc.db.QueryContext(ctx, selectMigrationTableQuery, file.File.Name())
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +134,7 @@ func (ds *DB) GetMigrationRow(ctx context.Context, file FileStruct) (*storage.Mi
 	return &migrationDB, nil
 }
 
-func (ds *DB) GetAllMigrationsOrderByVersionDesc(ctx context.Context,
+func (uc *Usecase) GetAllMigrationsOrderByVersionDesc(ctx context.Context,
 	step int,
 ) (storage.MigrationsDBStruct, error) {
 	selectAllMigrationsTableQuery := fmt.Sprintf(selectAllMigrationsTable,
@@ -134,13 +142,13 @@ func (ds *DB) GetAllMigrationsOrderByVersionDesc(ctx context.Context,
 
 	var migrationsDB []storage.MigrationDBStruct
 
-	actual := ds.GetActualVersion(ctx)
+	actual := uc.GetActualVersion(ctx)
 
 	if step == 0 {
 		actual = -1
 	}
 
-	rows, err := ds.db.QueryContext(ctx, selectAllMigrationsTableQuery, actual-step)
+	rows, err := uc.db.QueryContext(ctx, selectAllMigrationsTableQuery, actual-step)
 	if err != nil {
 		return nil, err
 	}
@@ -157,10 +165,10 @@ func (ds *DB) GetAllMigrationsOrderByVersionDesc(ctx context.Context,
 	return migrationsDB, nil
 }
 
-func (ds *DB) GetActualVersion(ctx context.Context) int {
+func (uc *Usecase) GetActualVersion(ctx context.Context) int {
 	getActualVersion := fmt.Sprintf(getMaxVersionFromMigrationsTable, config.MigrationTableName)
 	var versionDB int
-	rows, err := ds.db.QueryContext(ctx, getActualVersion)
+	rows, err := uc.db.QueryContext(ctx, getActualVersion)
 	if err != nil {
 		return 0
 	}
@@ -173,8 +181,8 @@ func (ds *DB) GetActualVersion(ctx context.Context) int {
 	return versionDB + 1
 }
 
-func (ds *DB) Migrate(ctx context.Context, migrateSQLString string) error {
-	_, err := ds.db.ExecContext(ctx, migrateSQLString)
+func (uc *Usecase) Migrate(ctx context.Context, migrateSQLString string) error {
+	_, err := uc.db.ExecContext(ctx, migrateSQLString)
 	if err != nil {
 		return err
 	}
@@ -182,9 +190,9 @@ func (ds *DB) Migrate(ctx context.Context, migrateSQLString string) error {
 	return nil
 }
 
-func (ds *DB) CreateMigration(ctx context.Context, file FileStruct, version int) error {
+func (uc *Usecase) CreateMigration(ctx context.Context, file FileStruct, version int) error {
 	insertMigrationsTableQuery := fmt.Sprintf(insertMigrationsTable, config.MigrationTableName)
-	_, err := ds.db.ExecContext(ctx, insertMigrationsTableQuery, file.File.Name(), file.Hash, version, time.Now())
+	_, err := uc.db.ExecContext(ctx, insertMigrationsTableQuery, file.File.Name(), file.Hash, version, time.Now())
 	if err != nil {
 		return err
 	}
@@ -192,9 +200,9 @@ func (ds *DB) CreateMigration(ctx context.Context, file FileStruct, version int)
 	return nil
 }
 
-func (ds *DB) DeleteMigration(ctx context.Context, file FileStruct) error {
+func (uc *Usecase) DeleteMigration(ctx context.Context, file FileStruct) error {
 	deleteRowFromMigrationsTableQuery := fmt.Sprintf(deleteRowFromMigrationsTable, config.MigrationTableName)
-	_, err := ds.db.ExecContext(ctx, deleteRowFromMigrationsTableQuery, file.File.Name())
+	_, err := uc.db.ExecContext(ctx, deleteRowFromMigrationsTableQuery, file.File.Name())
 	if err != nil {
 		return err
 	}
@@ -202,10 +210,10 @@ func (ds *DB) DeleteMigration(ctx context.Context, file FileStruct) error {
 	return nil
 }
 
-func (ds *DB) ExistTable(ctx context.Context, schema string, table string) bool {
+func (uc *Usecase) ExistTable(ctx context.Context, schema string, table string) bool {
 	selectExistsTableQuery := fmt.Sprintf(selectExistsTable, schema, table)
 
-	rows, err := ds.db.QueryContext(ctx, selectExistsTableQuery)
+	rows, err := uc.db.QueryContext(ctx, selectExistsTableQuery)
 	if err != nil {
 		return false
 	}
@@ -221,13 +229,13 @@ func (ds *DB) ExistTable(ctx context.Context, schema string, table string) bool 
 	return exist
 }
 
-func (ds *DB) CreateMigrationsTable(ctx context.Context) error {
-	exists := ds.ExistTable(ctx, "public", config.MigrationTableName)
+func (uc *Usecase) CreateMigrationsTable(ctx context.Context) error {
+	exists := uc.ExistTable(ctx, "public", config.MigrationTableName)
 
 	if !exists {
 		createMigrationsTableQuery := fmt.Sprintf(createMigrationsTable, config.MigrationTableName)
 
-		_, err := ds.db.ExecContext(ctx, createMigrationsTableQuery)
+		_, err := uc.db.ExecContext(ctx, createMigrationsTableQuery)
 		if err != nil {
 			return err
 		}
@@ -237,8 +245,8 @@ func (ds *DB) CreateMigrationsTable(ctx context.Context) error {
 	return nil
 }
 
-func (ds *DB) GetUpPart(fileStruct FileStruct) (string, error) {
-	contentFile, err := os.ReadFile(fmt.Sprintf("%s/%s", ds.cfg.FolderName, fileStruct.File.Name()))
+func (uc *Usecase) GetUpPart(fileStruct FileStruct) (string, error) {
+	contentFile, err := os.ReadFile(fmt.Sprintf("%s/%s", uc.cfg.FolderName, fileStruct.File.Name()))
 	if err != nil {
 		return "", err
 	}
@@ -255,8 +263,8 @@ func (ds *DB) GetUpPart(fileStruct FileStruct) (string, error) {
 	return strings.TrimSpace(res[0][1]), nil
 }
 
-func (ds *DB) GetDownPart(fileStruct FileStruct) (string, error) {
-	contentFile, err := os.ReadFile(fmt.Sprintf("%s/%s", ds.cfg.FolderName, fileStruct.File.Name()))
+func (uc *Usecase) GetDownPart(fileStruct FileStruct) (string, error) {
+	contentFile, err := os.ReadFile(fmt.Sprintf("%s/%s", uc.cfg.FolderName, fileStruct.File.Name()))
 	if err != nil {
 		return "", err
 	}

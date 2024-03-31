@@ -9,7 +9,7 @@ import (
 	_ "github.com/lib/pq" //nolint:revive,nolintlint
 )
 
-func Redo(ctx context.Context, redoStruct DBUsecaseContract, all bool, step int) (*Outs, error) {
+func Redo(ctx context.Context, redoStruct UCContract, all bool, step int) (*Outs, error) {
 	filesMap, err := redoStruct.GetAllMigrationFileMap()
 	if err != nil {
 		return nil, fmt.Errorf("getAllMigrationFileMap: %w", err)
@@ -43,7 +43,7 @@ func Redo(ctx context.Context, redoStruct DBUsecaseContract, all bool, step int)
 	return &outs, nil
 }
 
-func RedoMigration(ctx context.Context, ds DBUsecaseContract,
+func RedoMigration(ctx context.Context, ds UCContract,
 	migrations storage.MigrationsDBStruct, filesMap FilesMap,
 ) (*Outs, error) {
 	outs := make(Outs, 0)

@@ -37,7 +37,7 @@ func Start(mainCtx context.Context, logger *slog.Logger) {
 	if dbErr != nil {
 		logger.Error("Connect to DB", "Error", fmt.Errorf("NewDB: %w", dbErr))
 	}
-	dbStruct := usecase.NewDBStruct(db, &configuration)
+	dbStruct := usecase.NewUsecase(db, &configuration)
 	defer func() {
 		if dbErr == nil {
 			err := db.Close()

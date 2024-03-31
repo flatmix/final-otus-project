@@ -13,7 +13,7 @@ var (
 	ErrNothingForDownMigrate = errors.New("nothing for down migrate")
 )
 
-func Down(ctx context.Context, downStruct DBUsecaseContract, all bool, step int) (*Outs, error) {
+func Down(ctx context.Context, downStruct UCContract, all bool, step int) (*Outs, error) {
 	filesMap, err := downStruct.GetAllMigrationFileMap()
 	if err != nil {
 		return nil, err
@@ -55,7 +55,7 @@ func Down(ctx context.Context, downStruct DBUsecaseContract, all bool, step int)
 	return &outs, nil
 }
 
-func DownMigration(ctx context.Context, ds DBUsecaseContract,
+func DownMigration(ctx context.Context, ds UCContract,
 	migration storage.MigrationDBStruct, filesMap FilesMap,
 ) (*Out, error) {
 	file, ok := filesMap[migration.Name]

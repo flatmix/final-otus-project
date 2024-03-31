@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func Status(ctx context.Context, dbStruct DBUsecaseContract) (*Outs, error) {
+func Status(ctx context.Context, dbStruct UCContract) (*Outs, error) {
 	files, err := dbStruct.GetAllMigrationFile()
 	if err != nil {
 		return nil, err
